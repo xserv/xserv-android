@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
 android {
@@ -27,6 +27,5 @@ def siteUrl = 'https://github.com/xserv/xserv-android'      // Homepage URL of t
 def gitUrl = 'https://github.com/xserv/xserv-android.git'
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.koushikdutta.async:androidasync:2.1.6'
 }
