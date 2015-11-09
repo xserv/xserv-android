@@ -2,6 +2,8 @@
 *.apk
 *.ap_
 
+.DS_Store
+
 # Files for the Dalvik VM
 *.dex
 
@@ -25,3 +27,8 @@ proguard/
 
 # Log Files
 *.log
+
+*~
+
+.idea
+*.iml
