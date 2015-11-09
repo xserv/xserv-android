@@ -8,14 +8,7 @@ buildscript {
 }
 
 allprojects {
-    version = VERSION_NAME
-    group = GROUP
-
     repositories {
         jcenter()
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }
