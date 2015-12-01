@@ -118,10 +118,12 @@ public class Xserv {
     }
 
     private void send(String message) {
-        try {
-            mConn.get().send(message);
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        if (isConnected()) {
+            try {
+                mConn.get().send(message);
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 
