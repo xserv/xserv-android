@@ -28,8 +28,7 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-
+                xserv.disconnect();
             }
         });
 
@@ -37,14 +36,11 @@ public class MainActivity extends AppCompatActivity {
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-
+                xserv.connect();
             }
         });
 
         xserv = new Xserv("qLxFC-1");
-
-        xserv.connect();
     }
 
     @Override

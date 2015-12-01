@@ -1,5 +1,7 @@
 package com.mi.xserv;
 
+import android.util.Log;
+
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
@@ -11,45 +13,49 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv {
-    private final static int TRIGGER = 200;
-    private final static int BIND = 201;
-    private final static int UNBIND = 202;
-    private final static int HISTORY = 203;
-    private final static int PRESENCE = 204;
+    private final static String TAG = "Xserv";
+
+    public final static int TRIGGER = 200;
+    public final static int BIND = 201;
+    public final static int UNBIND = 202;
+    public final static int HISTORY = 203;
+    public final static int PRESENCE = 204;
 
     // in uso in presence
-    private final static int PRESENCE_IN = BIND + 200;
-    private final static int PRESENCE_OUT = UNBIND + 200;
+    public final static int PRESENCE_IN = BIND + 200;
+    public final static int PRESENCE_OUT = UNBIND + 200;
 
     // in uso in history
-    private final static String HISTORY_ID = "id";
-    private final static String HISTORY_TIMESTAMP = "timestamp";
+    public final static String HISTORY_ID = "id";
+    public final static String HISTORY_TIMESTAMP = "timestamp";
 
     // events:op result_code
-    private final static int RC_OK = 1;
-    private final static int RC_GENERIC_ERROR = 0;
-    private final static int RC_ARGS_ERROR = -1;
-    private final static int RC_ALREADY_BINDED = -2;
-    private final static int RC_UNAUTHORIZED = -3;
-    private final static int RC_NO_EVENT = -4;
-    private final static int RC_NO_DATA = -5;
-    private final static int RC_NOT_PRIVATE = -6;
+    public final static int RC_OK = 1;
+    public final static int RC_GENERIC_ERROR = 0;
+    public final static int RC_ARGS_ERROR = -1;
+    public final static int RC_ALREADY_BINDED = -2;
+    public final static int RC_UNAUTHORIZED = -3;
+    public final static int RC_NO_EVENT = -4;
+    public final static int RC_NO_DATA = -5;
+    public final static int RC_NOT_PRIVATE = -6;
 
     private final static String URL = "ws://192.168.130.153:4321/ws";
     private final static String DEFAULT_AUTH_URL = "http://192.168.130.153:4321/auth_user/";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
-    private Future<WebSocket> conn;
-    private String app_id;
+    private Future<WebSocket> mConn;
+    private boolean isConnect;
+    private String mAppId;
     private int reconnectInterval;
     private boolean autoreconnect;
 
     public Xserv(String app_id) {
-        this.app_id = app_id;
-        this.conn = null;
-        this.reconnectInterval = DEFAULT_RI;
-        this.autoreconnect = false;
+        mAppId = app_id;
+        mConn = null;
+        isConnect = false;
+        reconnectInterval = DEFAULT_RI;
+        autoreconnect = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -57,40 +63,54 @@ public class Xserv {
     }
 
     public boolean isConnected() {
-        // return this.conn && this.conn.readyState == WebSocket.OPEN;
-        return true;
+        return mConn != null && isConnect;
     }
 
     public void connect() {
-        conn = AsyncHttpClient.getDefaultInstance().websocket(URL, null,
-                new AsyncHttpClient.WebSocketConnectCallback() {
+        autoreconnect = true;
 
-                    @Override
-                    public void onCompleted(Exception e, WebSocket ws) {
-                        if (e == null) {
+        if (!isConnected()) {
+            mConn = AsyncHttpClient.getDefaultInstance().websocket(URL, null,
+                    new AsyncHttpClient.WebSocketConnectCallback() {
 
-                            ws.setClosedCallback(new CompletedCallback() {
-                                @Override
-                                public void onCompleted(Exception e) {
+                        @Override
+                        public void onCompleted(Exception e, WebSocket ws) {
+                            if (e == null) {
+                                isConnect = true;
+                                Log.d(TAG, "open");
 
-                                }
-                            });
+                                ws.setClosedCallback(new CompletedCallback() {
+                                    @Override
+                                    public void onCompleted(Exception e) {
+                                        isConnect = false;
+                                        Log.d(TAG, "close");
+                                    }
+                                });
 
-                            ws.setStringCallback(new WebSocket.StringCallback() {
-                                @Override
-                                public void onStringAvailable(final String s) {
+                                ws.setStringCallback(new WebSocket.StringCallback() {
+                                    @Override
+                                    public void onStringAvailable(final String s) {
 
-                                }
-                            });
-                        } else {
-                            e.printStackTrace();
+                                    }
+                                });
+                            } else {
+                                e.printStackTrace();
+                            }
                         }
-                    }
-                });
+                    });
+        }
     }
 
     public void disconnect() {
+        autoreconnect = false;
 
+        if (isConnect) {
+            try {
+                mConn.get().close();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void setReconnectInterval(Integer value) {
@@ -99,10 +119,8 @@ public class Xserv {
 
     private void send(String message) {
         try {
-            conn.get().send(message);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+            mConn.get().send(message);
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
     }
@@ -141,7 +159,7 @@ public class Xserv {
     public void trigger(String topic, String event, String message) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", TRIGGER);
             data.put("topic", topic);
             data.put("event", event);
@@ -155,7 +173,7 @@ public class Xserv {
     public void bind(String topic, String event) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", BIND);
             data.put("topic", topic);
             data.put("event", event);
@@ -172,7 +190,7 @@ public class Xserv {
     public void unbind(String topic, String event) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", UNBIND);
             data.put("topic", topic);
             data.put("event", event);
@@ -185,7 +203,7 @@ public class Xserv {
     public void historyById(String topic, String event, Integer value, Integer limit) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -201,7 +219,7 @@ public class Xserv {
     public void historyByTimestamp(String topic, String event, Integer value, Integer limit) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -217,7 +235,7 @@ public class Xserv {
     public void presence(String topic, String event) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", app_id);
+            data.put("app_id", mAppId);
             data.put("op", PRESENCE);
             data.put("topic", topic);
             data.put("event", event);
