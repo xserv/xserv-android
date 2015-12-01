@@ -1,0 +1,96 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+version = "1.0.3"
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        minSdkVersion 7
+        targetSdkVersion 23
+        versionCode 4
+        versionName version
+    }
+    buildTypes {
+
+    }
+}
+
+def siteUrl = 'https://github.com/xserv/xserv-android'      // Homepage URL of the library
+def gitUrl = 'https://github.com/xserv/xserv-android.git'   // Git repository URL
+group = "xserv"
+
+configure(install.repositories.mavenInstaller) {
+        // This generates POM.xml with proper parameters
+        pom.project {
+            packaging 'aar'
+
+            name 'Xserv Android Client Library'
+            url siteUrl
+
+            licenses {
+                license {
+                    name 'GNU LESSER GENERAL PUBLIC LICENSE 3.0'
+                    url 'http://www.gnu.org/licenses/lgpl.txt'
+                }
+            }
+            developers {
+                developer {
+                    id 'Xserv'
+                    name 'Xserv'
+                    email 'amatig@gmail.com'
+                }
+            }
+            scm {
+                connection gitUrl
+                developerConnection gitUrl
+                url siteUrl
+
+            }
+        }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.koushikdutta.async:androidasync:2.1.6'
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    pkg {
+        repo = "maven"
+        name = "xserv-android"
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["LGPL-3.0"]
+        publish = true
+    }
+}
