@@ -1,5 +1,7 @@
 package com.mi.xserv;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.koushikdutta.async.callback.CompletedCallback;
@@ -13,22 +15,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv {
-    private final static String TAG = "Xserv";
-
     public final static int TRIGGER = 200;
     public final static int BIND = 201;
     public final static int UNBIND = 202;
     public final static int HISTORY = 203;
     public final static int PRESENCE = 204;
-
     // in uso in presence
     public final static int PRESENCE_IN = BIND + 200;
     public final static int PRESENCE_OUT = UNBIND + 200;
-
     // in uso in history
     public final static String HISTORY_ID = "id";
     public final static String HISTORY_TIMESTAMP = "timestamp";
-
     // events:op result_code
     public final static int RC_OK = 1;
     public final static int RC_GENERIC_ERROR = 0;
@@ -38,7 +35,8 @@ public class Xserv {
     public final static int RC_NO_EVENT = -4;
     public final static int RC_NO_DATA = -5;
     public final static int RC_NOT_PRIVATE = -6;
-
+    
+    private final static String TAG = "Xserv";
     private final static String URL = "ws://192.168.130.153:4321/ws";
     private final static String DEFAULT_AUTH_URL = "http://192.168.130.153:4321/auth_user/";
     private final static int DEFAULT_RI = 5000;
@@ -76,14 +74,18 @@ public class Xserv {
                         @Override
                         public void onCompleted(Exception e, WebSocket ws) {
                             if (e == null) {
-                                isConnect = true;
                                 Log.d(TAG, "open");
+                                isConnect = true;
 
                                 ws.setClosedCallback(new CompletedCallback() {
                                     @Override
                                     public void onCompleted(Exception e) {
-                                        isConnect = false;
                                         Log.d(TAG, "close");
+                                        isConnect = false;
+
+                                        if (autoreconnect) {
+                                            setTimeout();
+                                        }
                                     }
                                 });
 
@@ -94,11 +96,26 @@ public class Xserv {
                                     }
                                 });
                             } else {
-                                e.printStackTrace();
+                                // eccezione, error socket
+                                if (autoreconnect) {
+                                    setTimeout();
+                                }
                             }
                         }
                     });
         }
+    }
+
+    private void setTimeout() {
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "try reconnect");
+
+                connect();
+            }
+        }, reconnectInterval);
     }
 
     public void disconnect() {
