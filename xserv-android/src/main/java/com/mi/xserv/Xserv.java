@@ -217,7 +217,7 @@ public class Xserv {
             JSONObject data = new JSONObject();
             try {
                 data.put("app_id", mAppId);
-                data.put("op", TRIGGER);
+                data.put("op", Xserv.TRIGGER);
                 data.put("topic", topic);
                 data.put("event", event);
                 data.put("arg1", message);
@@ -232,7 +232,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", BIND);
+            data.put("op", Xserv.BIND);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
@@ -249,7 +249,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", UNBIND);
+            data.put("op", Xserv.UNBIND);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
@@ -262,10 +262,10 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", HISTORY);
+            data.put("op", Xserv.HISTORY);
             data.put("topic", topic);
             data.put("event", event);
-            data.put("arg1", HISTORY_ID);
+            data.put("arg1", Xserv.HISTORY_ID);
             data.put("arg2", String.valueOf(value));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
@@ -278,10 +278,10 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", HISTORY);
+            data.put("op", Xserv.HISTORY);
             data.put("topic", topic);
             data.put("event", event);
-            data.put("arg1", HISTORY_TIMESTAMP);
+            data.put("arg1", Xserv.HISTORY_TIMESTAMP);
             data.put("arg2", String.valueOf(value));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
@@ -294,7 +294,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", PRESENCE);
+            data.put("op", Xserv.PRESENCE);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
