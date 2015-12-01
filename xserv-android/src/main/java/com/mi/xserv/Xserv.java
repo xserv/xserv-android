@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -190,26 +191,40 @@ public class Xserv {
     }
 
     private String stringify_op(int code) {
-        if (code == Xserv.BIND) {
-            return "bind";
-        } else if (code == Xserv.UNBIND) {
-            return "unbind";
-        } else if (code == Xserv.HISTORY) {
-            return "history";
-        } else if (code == Xserv.PRESENCE) {
-            return "presence";
-        } else if (code == Xserv.PRESENCE_IN) {
-            return "presence_in";
-        } else if (code == Xserv.PRESENCE_OUT) {
-            return "presence_out";
-        } else if (code == Xserv.TRIGGER) {
-            return "trigger";
+        switch (code) {
+            case Xserv.BIND:
+                return "bind";
+            case Xserv.UNBIND:
+                return "unbind";
+            case Xserv.HISTORY:
+                return "history";
+            case Xserv.PRESENCE:
+                return "presence";
+            case Xserv.PRESENCE_IN:
+                return "presence_in";
+            case Xserv.PRESENCE_OUT:
+                return "presence_out";
+            case Xserv.TRIGGER:
+                return "trigger";
         }
         return "";
     }
 
-    public void addEventListener() {
+    public void addEventListener(String name, Callable<?> callback) {
+        switch (name) {
+            case "open":
 
+                break;
+            case "close":
+
+                break;
+            case "events":
+
+                break;
+            case "events:op":
+
+                break;
+        }
     }
 
     public void trigger(String topic, String event, String message) {
