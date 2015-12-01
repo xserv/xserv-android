@@ -11,6 +11,7 @@ import com.koushikdutta.async.http.WebSocket;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -35,25 +36,31 @@ public class Xserv {
     public final static int RC_NO_EVENT = -4;
     public final static int RC_NO_DATA = -5;
     public final static int RC_NOT_PRIVATE = -6;
-    
+
     private final static String TAG = "Xserv";
     private final static String URL = "ws://192.168.130.153:4321/ws";
     private final static String DEFAULT_AUTH_URL = "http://192.168.130.153:4321/auth_user/";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
-    private Future<WebSocket> mConn;
-    private boolean isConnect;
     private String mAppId;
+    private Future<WebSocket> mConn;
+    private boolean is_finish_ops;
+    private ArrayList<JSONObject> mListeners;
+    private ArrayList<JSONObject> mOps;
     private int reconnectInterval;
     private boolean autoreconnect;
+    private boolean isConnect;
 
     public Xserv(String app_id) {
         mAppId = app_id;
         mConn = null;
-        isConnect = false;
+        is_finish_ops = false;
+        mListeners = new ArrayList<>();
+        mOps = new ArrayList<>();
         reconnectInterval = DEFAULT_RI;
         autoreconnect = false;
+        isConnect = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -81,6 +88,7 @@ public class Xserv {
                                     @Override
                                     public void onCompleted(Exception e) {
                                         Log.d(TAG, "close");
+                                        is_finish_ops = false;
                                         isConnect = false;
 
                                         if (autoreconnect) {
@@ -95,6 +103,8 @@ public class Xserv {
 
                                     }
                                 });
+
+                                is_finish_ops = true;
                             } else {
                                 // eccezione, error socket
                                 if (autoreconnect) {
@@ -134,18 +144,45 @@ public class Xserv {
         this.reconnectInterval = value;
     }
 
-    private void send(String message) {
+    private void send(JSONObject json) {
         if (isConnected()) {
+            int op = 0;
+            String topic = "";
             try {
-                mConn.get().send(message);
-            } catch (InterruptedException | ExecutionException e) {
+                op = json.getInt("op");
+                topic = json.getString("topic");
+            } catch (JSONException e) {
                 e.printStackTrace();
+            }
+
+            if (op == Xserv.BIND && Xserv.isPrivateTopic(topic)) {
+
+            } else {
+                try {
+                    mConn.get().send(json.toString());
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
-    private void add_op() {
+    private void add_op(JSONObject json) {
+        int op = 0;
+        try {
+            op = json.getInt("op");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
+        // salva tutte op da ripetere su riconnessione
+        if (op == Xserv.BIND || op == Xserv.UNBIND) {
+            mOps.add(json);
+        }
+
+        if (is_finish_ops) {
+            send(json);
+        }
     }
 
     private void add_user_data() {
@@ -176,17 +213,19 @@ public class Xserv {
     }
 
     public void trigger(String topic, String event, String message) {
-        JSONObject data = new JSONObject();
-        try {
-            data.put("app_id", mAppId);
-            data.put("op", TRIGGER);
-            data.put("topic", topic);
-            data.put("event", event);
-            data.put("arg1", message);
-        } catch (JSONException e) {
-            e.printStackTrace();
+        if (is_finish_ops) {
+            JSONObject data = new JSONObject();
+            try {
+                data.put("app_id", mAppId);
+                data.put("op", TRIGGER);
+                data.put("topic", topic);
+                data.put("event", event);
+                data.put("arg1", message);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            send(data);
         }
-        send(data.toString());
     }
 
     public void bind(String topic, String event) {
@@ -199,7 +238,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data.toString());
+        add_op(data);
     }
 
     public void unbind(String topic) {
@@ -216,7 +255,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data.toString());
+        add_op(data);
     }
 
     public void historyById(String topic, String event, Integer value, Integer limit) {
@@ -232,7 +271,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data.toString());
+        add_op(data);
     }
 
     public void historyByTimestamp(String topic, String event, Integer value, Integer limit) {
@@ -248,7 +287,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data.toString());
+        add_op(data);
     }
 
     public void presence(String topic, String event) {
@@ -261,7 +300,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data.toString());
+        add_op(data);
     }
 
 }
