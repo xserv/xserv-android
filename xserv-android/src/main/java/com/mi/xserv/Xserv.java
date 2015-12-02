@@ -2,6 +2,7 @@ package com.mi.xserv;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 
 import com.koushikdutta.async.callback.CompletedCallback;
@@ -11,6 +12,7 @@ import com.koushikdutta.async.http.WebSocket;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -85,6 +87,7 @@ public class Xserv {
                                 isConnect = true;
 
                                 ws.setClosedCallback(new CompletedCallback() {
+
                                     @Override
                                     public void onCompleted(Exception ignored) {
                                         Log.d(TAG, "close");
@@ -96,12 +99,13 @@ public class Xserv {
                                         }
 
                                         if (mListeners != null) {
-                                            mListeners.OnClose(null);
+                                            mListeners.OnClose();
                                         }
                                     }
                                 });
 
                                 ws.setStringCallback(new WebSocket.StringCallback() {
+
                                     @Override
                                     public void onStringAvailable(final String event) {
                                         if (!event.startsWith(OP_SEP)) {
@@ -121,8 +125,13 @@ public class Xserv {
                                                 JSONObject data_json = null;
                                                 String data = arr[5];
                                                 if (data != null) {
-                                                    // decode base64
-                                                    // parse json
+                                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
+                                                    try {
+                                                        String raw = new String(b, "UTF-8");
+                                                        data_json = new JSONObject(raw);
+                                                    } catch (JSONException | UnsupportedEncodingException e1) {
+                                                        e1.printStackTrace();
+                                                    }
                                                 }
 
                                                 JSONObject json = new JSONObject();
@@ -138,8 +147,8 @@ public class Xserv {
                                                     json.put("event", arr[4]);
                                                     json.put("data", data_json);
                                                     json.put("descr", arr[6]);
-                                                } catch (JSONException e) {
-                                                    e.printStackTrace();
+                                                } catch (JSONException e1) {
+                                                    e1.printStackTrace();
                                                 }
 
                                                 // bind privata ok
@@ -148,7 +157,7 @@ public class Xserv {
                                                 }
 
                                                 if (mListeners != null) {
-                                                    mListeners.OnEvents(json);
+                                                    mListeners.OnEventsOp(json);
                                                 }
                                             }
                                         }
@@ -158,7 +167,7 @@ public class Xserv {
                                 is_finish_ops = true;
 
                                 if (mListeners != null) {
-                                    mListeners.OnOpen(null);
+                                    mListeners.OnOpen();
                                 }
                             } else {
                                 // eccezione, error socket
@@ -167,7 +176,7 @@ public class Xserv {
                                 }
 
                                 if (mListeners != null) {
-                                    mListeners.OnError(null);
+                                    mListeners.OnError();
                                 }
                             }
                         }
@@ -190,7 +199,7 @@ public class Xserv {
     public void disconnect() {
         autoreconnect = false;
 
-        if (isConnect) {
+        if (isConnected()) {
             try {
                 mConn.get().close();
             } catch (InterruptedException | ExecutionException e) {
@@ -245,7 +254,7 @@ public class Xserv {
     }
 
     private void add_user_data(JSONObject json) {
-
+        user_data = json;
     }
 
     private String stringify_op(int code) {

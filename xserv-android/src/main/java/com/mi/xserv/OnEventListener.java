@@ -4,11 +4,11 @@ import org.json.JSONObject;
 
 public interface OnEventListener {
 
-    void OnOpen(JSONObject json);
+    void OnOpen();
 
-    void OnClose(JSONObject json);
+    void OnClose();
 
-    void OnError(JSONObject json);
+    void OnError();
 
     void OnEvents(JSONObject json);
 
