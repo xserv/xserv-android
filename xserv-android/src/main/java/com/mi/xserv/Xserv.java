@@ -16,6 +16,7 @@ import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -333,16 +334,35 @@ public class Xserv {
     }
 
     public void bind(String topic, String event) {
-        JSONObject data = new JSONObject();
-        try {
-            data.put("app_id", mAppId);
-            data.put("op", BIND);
-            data.put("topic", topic);
-            data.put("event", event);
-        } catch (JSONException e) {
-            e.printStackTrace();
+        bind(topic, event, null);
+    }
+
+    public void bind(String topic, String event, JSONObject auth_endpoint) {
+        ArrayList<String> topics = new ArrayList<>(Arrays.asList(topic));
+        ArrayList<String> events = new ArrayList<>(Arrays.asList(event));
+        bind(topics, events, auth_endpoint);
+    }
+
+    public void bind(ArrayList<String> topics, ArrayList<String> events) {
+        bind(topics, events, null);
+    }
+
+    public void bind(ArrayList<String> topics, ArrayList<String> events, JSONObject auth_endpoint) {
+        for (String t : topics) {
+            for (String e : events) {
+                JSONObject data = new JSONObject();
+                try {
+                    data.put("app_id", mAppId);
+                    data.put("op", BIND);
+                    data.put("topic", t);
+                    data.put("event", e);
+                    data.put("auth_endpoint", auth_endpoint);
+                } catch (JSONException e1) {
+                    e1.printStackTrace();
+                }
+                add_op(data);
+            }
         }
-        add_op(data);
     }
 
     public void unbind(String topic) {
@@ -350,16 +370,35 @@ public class Xserv {
     }
 
     public void unbind(String topic, String event) {
-        JSONObject data = new JSONObject();
-        try {
-            data.put("app_id", mAppId);
-            data.put("op", UNBIND);
-            data.put("topic", topic);
-            data.put("event", event);
-        } catch (JSONException e) {
-            e.printStackTrace();
+        ArrayList<String> topics = new ArrayList<>(Arrays.asList(topic));
+        ArrayList<String> events = new ArrayList<>(Arrays.asList(event));
+        unbind(topics, events);
+    }
+
+    public void unbind(ArrayList<String> topics) {
+        ArrayList<String> events = new ArrayList<>(Arrays.asList(""));
+        unbind(topics, events);
+    }
+
+    public void unbind(ArrayList<String> topics, ArrayList<String> events) {
+        for (String t : topics) {
+            for (String e : events) {
+                JSONObject data = new JSONObject();
+                try {
+                    data.put("app_id", mAppId);
+                    data.put("op", UNBIND);
+                    data.put("topic", t);
+                    data.put("event", e);
+                } catch (JSONException e1) {
+                    e1.printStackTrace();
+                }
+                add_op(data);
+            }
         }
-        add_op(data);
+    }
+
+    public void historyById(String topic, String event, Integer value) {
+        historyByTimestamp(topic, event, value, 0);
     }
 
     public void historyById(String topic, String event, Integer value, Integer limit) {
@@ -376,6 +415,10 @@ public class Xserv {
             e.printStackTrace();
         }
         add_op(data);
+    }
+
+    public void historyByTimestamp(String topic, String event, Integer value) {
+        historyByTimestamp(topic, event, value, 0);
     }
 
     public void historyByTimestamp(String topic, String event, Integer value, Integer limit) {
