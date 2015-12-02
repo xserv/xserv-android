@@ -2,7 +2,7 @@ package com.mi.xserv;
 
 import org.json.JSONObject;
 
-public interface OnEventListener {
+public interface OnXservEventListener {
 
     void OnOpen();
 

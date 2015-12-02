@@ -48,10 +48,11 @@ public class Xserv {
     private String mAppId;
     private Future<WebSocket> mConn;
     private boolean is_finish_ops;
-    private OnEventListener mListeners;
+    private OnXservEventListener mListeners;
     private ArrayList<JSONObject> mOps;
     private int reconnectInterval;
     private boolean autoreconnect;
+    private JSONObject mUserData;
     private boolean isConnect;
 
     public Xserv(String app_id) {
@@ -62,6 +63,7 @@ public class Xserv {
         mOps = new ArrayList<>();
         reconnectInterval = DEFAULT_RI;
         autoreconnect = false;
+        mUserData = new JSONObject();
         isConnect = false;
     }
 
@@ -164,6 +166,10 @@ public class Xserv {
                                     }
                                 });
 
+                                for (JSONObject op : mOps) {
+                                    send(op);
+                                }
+
                                 is_finish_ops = true;
 
                                 if (mListeners != null) {
@@ -254,7 +260,7 @@ public class Xserv {
     }
 
     private void add_user_data(JSONObject json) {
-        user_data = json;
+        mUserData = json;
     }
 
     private String stringify_op(int code) {
@@ -277,7 +283,7 @@ public class Xserv {
         return "";
     }
 
-    public void setOnEventListener(OnEventListener onEventListener) {
+    public void setOnEventListener(OnXservEventListener onEventListener) {
         mListeners = onEventListener;
     }
 
