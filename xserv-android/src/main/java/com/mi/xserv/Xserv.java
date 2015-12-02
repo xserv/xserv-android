@@ -54,6 +54,7 @@ public class Xserv {
     private boolean autoreconnect;
     private JSONObject mUserData;
     private boolean isConnect;
+    private boolean debug;
 
     public Xserv(String app_id) {
         mAppId = app_id;
@@ -65,10 +66,15 @@ public class Xserv {
         autoreconnect = false;
         mUserData = new JSONObject();
         isConnect = false;
+        debug = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
         return topic.startsWith("@");
+    }
+
+    public void setDebug(boolean flag) {
+        debug = flag;
     }
 
     public boolean isConnected() {
@@ -85,14 +91,20 @@ public class Xserv {
                         @Override
                         public void onCompleted(Exception e, WebSocket ws) {
                             if (e == null) {
-                                Log.d(TAG, "open");
+                                if (debug) {
+                                    Log.d(TAG, "open");
+                                }
+
                                 isConnect = true;
 
                                 ws.setClosedCallback(new CompletedCallback() {
 
                                     @Override
                                     public void onCompleted(Exception ignored) {
-                                        Log.d(TAG, "close");
+                                        if (debug) {
+                                            Log.d(TAG, "close");
+                                        }
+
                                         isConnect = false;
                                         is_finish_ops = false;
 
@@ -195,7 +207,9 @@ public class Xserv {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG, "try reconnect");
+                if (debug) {
+                    Log.d(TAG, "try reconnect");
+                }
 
                 connect();
             }

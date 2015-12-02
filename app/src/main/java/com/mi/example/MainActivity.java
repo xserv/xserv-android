@@ -4,14 +4,19 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
-public class MainActivity extends AppCompatActivity {
+import org.json.JSONObject;
+
+public class MainActivity extends AppCompatActivity implements OnXservEventListener {
+    private final static String TAG = "Example";
     private TextView mMessagesView;
     private Xserv xserv;
 
@@ -28,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.disconnect();
+                // xserv.disconnect();
+                xserv.unbind("milano", "all");
             }
         });
 
@@ -36,11 +42,18 @@ public class MainActivity extends AppCompatActivity {
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.connect();
+                xserv.bind("milano", "all");
             }
         });
 
         xserv = new Xserv("qLxFC-1");
+        // xserv.setDebug(true);
+
+        xserv.setOnEventListener(this);
+
+        xserv.bind("milano", "pippo");
+
+        xserv.connect();
     }
 
     @Override
@@ -65,4 +78,28 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void OnOpen() {
+        Log.d(TAG, "Connected");
+    }
+
+    @Override
+    public void OnClose() {
+        Log.d(TAG, "Disconnected");
+    }
+
+    @Override
+    public void OnError() {
+
+    }
+
+    @Override
+    public void OnEvents(JSONObject json) {
+        Log.d(TAG, "EVENT " + json.toString());
+    }
+
+    @Override
+    public void OnEventsOp(JSONObject json) {
+        Log.d(TAG, "OP " + json.toString());
+    }
 }
