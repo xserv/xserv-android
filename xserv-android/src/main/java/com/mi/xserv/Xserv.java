@@ -12,7 +12,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -47,7 +46,7 @@ public class Xserv {
     private String mAppId;
     private Future<WebSocket> mConn;
     private boolean is_finish_ops;
-    private ArrayList<JSONObject> mListeners;
+    private OnEventListener mListeners;
     private ArrayList<JSONObject> mOps;
     private int reconnectInterval;
     private boolean autoreconnect;
@@ -57,7 +56,7 @@ public class Xserv {
         mAppId = app_id;
         mConn = null;
         is_finish_ops = false;
-        mListeners = new ArrayList<>();
+        mListeners = null;
         mOps = new ArrayList<>();
         reconnectInterval = DEFAULT_RI;
         autoreconnect = false;
@@ -87,29 +86,88 @@ public class Xserv {
 
                                 ws.setClosedCallback(new CompletedCallback() {
                                     @Override
-                                    public void onCompleted(Exception e) {
+                                    public void onCompleted(Exception ignored) {
                                         Log.d(TAG, "close");
-                                        is_finish_ops = false;
                                         isConnect = false;
+                                        is_finish_ops = false;
 
                                         if (autoreconnect) {
                                             setTimeout();
+                                        }
+
+                                        if (mListeners != null) {
+                                            mListeners.OnClose(null);
                                         }
                                     }
                                 });
 
                                 ws.setStringCallback(new WebSocket.StringCallback() {
                                     @Override
-                                    public void onStringAvailable(final String s) {
+                                    public void onStringAvailable(final String event) {
+                                        if (!event.startsWith(OP_SEP)) {
+                                            JSONObject json = null;
+                                            try {
+                                                json = new JSONObject(event);
+                                            } catch (JSONException e1) {
+                                                e1.printStackTrace();
+                                            }
 
+                                            if (mListeners != null) {
+                                                mListeners.OnEvents(json);
+                                            }
+                                        } else {
+                                            String[] arr = event.split(OP_SEP);
+                                            if (arr.length >= 7) {
+                                                JSONObject data_json = null;
+                                                String data = arr[5];
+                                                if (data != null) {
+                                                    // decode base64
+                                                    // parse json
+                                                }
+
+                                                JSONObject json = new JSONObject();
+                                                int rc = Integer.parseInt(arr[1]);
+                                                int op = Integer.parseInt(arr[2]);
+                                                String topic = arr[3];
+
+                                                try {
+                                                    json.put("rc", rc);
+                                                    json.put("op", op);
+                                                    json.put("name", stringify_op(op));
+                                                    json.put("topic", topic);
+                                                    json.put("event", arr[4]);
+                                                    json.put("data", data_json);
+                                                    json.put("descr", arr[6]);
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+
+                                                // bind privata ok
+                                                if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
+                                                    add_user_data(data_json);
+                                                }
+
+                                                if (mListeners != null) {
+                                                    mListeners.OnEvents(json);
+                                                }
+                                            }
+                                        }
                                     }
                                 });
 
                                 is_finish_ops = true;
+
+                                if (mListeners != null) {
+                                    mListeners.OnOpen(null);
+                                }
                             } else {
                                 // eccezione, error socket
                                 if (autoreconnect) {
                                     setTimeout();
+                                }
+
+                                if (mListeners != null) {
+                                    mListeners.OnError(null);
                                 }
                             }
                         }
@@ -142,7 +200,7 @@ public class Xserv {
     }
 
     public void setReconnectInterval(Integer value) {
-        this.reconnectInterval = value;
+        reconnectInterval = value;
     }
 
     private void send(JSONObject json) {
@@ -156,7 +214,7 @@ public class Xserv {
                 e.printStackTrace();
             }
 
-            if (op == Xserv.BIND && Xserv.isPrivateTopic(topic)) {
+            if (op == BIND && isPrivateTopic(topic)) {
 
             } else {
                 try {
@@ -177,7 +235,7 @@ public class Xserv {
         }
 
         // salva tutte op da ripetere su riconnessione
-        if (op == Xserv.BIND || op == Xserv.UNBIND) {
+        if (op == BIND || op == UNBIND) {
             mOps.add(json);
         }
 
@@ -186,45 +244,32 @@ public class Xserv {
         }
     }
 
-    private void add_user_data() {
+    private void add_user_data(JSONObject json) {
 
     }
 
     private String stringify_op(int code) {
         switch (code) {
-            case Xserv.BIND:
+            case BIND:
                 return "bind";
-            case Xserv.UNBIND:
+            case UNBIND:
                 return "unbind";
-            case Xserv.HISTORY:
+            case HISTORY:
                 return "history";
-            case Xserv.PRESENCE:
+            case PRESENCE:
                 return "presence";
-            case Xserv.PRESENCE_IN:
+            case PRESENCE_IN:
                 return "presence_in";
-            case Xserv.PRESENCE_OUT:
+            case PRESENCE_OUT:
                 return "presence_out";
-            case Xserv.TRIGGER:
+            case TRIGGER:
                 return "trigger";
         }
         return "";
     }
 
-    public void addEventListener(String name, Callable<?> callback) {
-        switch (name) {
-            case "open":
-
-                break;
-            case "close":
-
-                break;
-            case "events":
-
-                break;
-            case "events:op":
-
-                break;
-        }
+    public void setOnEventListener(OnEventListener onEventListener) {
+        mListeners = onEventListener;
     }
 
     public void trigger(String topic, String event, String message) {
@@ -232,7 +277,7 @@ public class Xserv {
             JSONObject data = new JSONObject();
             try {
                 data.put("app_id", mAppId);
-                data.put("op", Xserv.TRIGGER);
+                data.put("op", TRIGGER);
                 data.put("topic", topic);
                 data.put("event", event);
                 data.put("arg1", message);
@@ -247,7 +292,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", Xserv.BIND);
+            data.put("op", BIND);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
@@ -264,7 +309,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", Xserv.UNBIND);
+            data.put("op", UNBIND);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
@@ -277,10 +322,10 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", Xserv.HISTORY);
+            data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
-            data.put("arg1", Xserv.HISTORY_ID);
+            data.put("arg1", HISTORY_ID);
             data.put("arg2", String.valueOf(value));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
@@ -293,10 +338,10 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", Xserv.HISTORY);
+            data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
-            data.put("arg1", Xserv.HISTORY_TIMESTAMP);
+            data.put("arg1", HISTORY_TIMESTAMP);
             data.put("arg2", String.valueOf(value));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
@@ -309,7 +354,7 @@ public class Xserv {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
-            data.put("op", Xserv.PRESENCE);
+            data.put("op", PRESENCE);
             data.put("topic", topic);
             data.put("event", event);
         } catch (JSONException e) {
