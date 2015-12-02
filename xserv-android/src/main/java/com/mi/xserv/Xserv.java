@@ -42,8 +42,9 @@ public class Xserv {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String URL = "ws://192.168.130.153:4321/ws";
-    private final static String DEFAULT_AUTH_URL = "http://192.168.130.153:4321/auth_user/";
+    private final static String SERVER = "192.168.1.131:4321";
+    private final static String URL = "ws://" + SERVER + "/ws";
+    private final static String DEFAULT_AUTH_URL = "http://" + SERVER + "/auth_user/";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
