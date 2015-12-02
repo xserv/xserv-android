@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 // xserv.disconnect();
-                xserv.unbind("milano", "all");
+                xserv.historyById("milano", "all", 0, 2000);
             }
         });
 

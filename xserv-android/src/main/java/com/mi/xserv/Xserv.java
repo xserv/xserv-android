@@ -9,8 +9,10 @@ import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -122,6 +124,10 @@ public class Xserv {
 
                                     @Override
                                     public void onStringAvailable(final String event) {
+                                        if (debug) {
+                                            Log.d(TAG, "raw " + event);
+                                        }
+
                                         if (!event.startsWith(OP_SEP)) {
                                             JSONObject json = null;
                                             try {
@@ -134,17 +140,25 @@ public class Xserv {
                                                 mListeners.OnEvents(json);
                                             }
                                         } else {
-                                            String[] arr = event.split(OP_SEP);
+                                            String[] arr = event.split(OP_SEP, -1);
                                             if (arr.length >= 7) {
-                                                JSONObject data_json = null;
+                                                // data structure json array o object
+                                                Object data_json = JSONObject.NULL;
                                                 String data = arr[5];
                                                 if (data != null) {
                                                     byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                                    try {
-                                                        String raw = new String(b, "UTF-8");
-                                                        data_json = new JSONObject(raw);
-                                                    } catch (JSONException | UnsupportedEncodingException e1) {
-                                                        e1.printStackTrace();
+                                                    if (b.length > 0) {
+                                                        try {
+                                                            String raw = new String(b, "UTF-8");
+                                                            Object j = new JSONTokener(raw).nextValue();
+                                                            if (j instanceof JSONObject) {
+                                                                data_json = new JSONObject(raw);
+                                                            } else if (j instanceof JSONArray) {
+                                                                data_json = new JSONArray(raw);
+                                                            }
+                                                        } catch (JSONException | UnsupportedEncodingException e1) {
+                                                            e1.printStackTrace();
+                                                        }
                                                     }
                                                 }
 
@@ -167,7 +181,7 @@ public class Xserv {
 
                                                 // bind privata ok
                                                 if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
-                                                    add_user_data(data_json);
+                                                    add_user_data((JSONObject) data_json);
                                                 }
 
                                                 if (mListeners != null) {
