@@ -398,7 +398,7 @@ public class Xserv {
     }
 
     public void historyById(String topic, String event, Integer value) {
-        historyByTimestamp(topic, event, value, 0);
+        historyById(topic, event, value, 0);
     }
 
     public void historyById(String topic, String event, Integer value, Integer limit) {
