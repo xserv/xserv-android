@@ -1,1 +1,1 @@
-include ':app', ':xserv-android'
+include ':example', ':xserv-android'
