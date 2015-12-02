@@ -24,33 +24,33 @@ def siteUrl = 'https://github.com/xserv/xserv-android'      // Homepage URL of t
 def gitUrl = 'https://github.com/xserv/xserv-android.git'   // Git repository URL
 
 configure(install.repositories.mavenInstaller) {
-        // This generates POM.xml with proper parameters
-        pom.project {
-            packaging 'aar'
+    // This generates POM.xml with proper parameters
+    pom.project {
+        packaging 'aar'
 
-            name 'Xserv Android Client Library'
-            url siteUrl
+        name 'Xserv Android Client Library'
+        url siteUrl
 
-            licenses {
-                license {
-                    name 'GNU LESSER GENERAL PUBLIC LICENSE 3.0'
-                    url 'http://www.gnu.org/licenses/lgpl.txt'
-                }
-            }
-            developers {
-                developer {
-                    id 'xserv'
-                    name 'Xserv'
-                    email 'amatig@gmail.com'
-                }
-            }
-            scm {
-                connection gitUrl
-                developerConnection gitUrl
-                url siteUrl
-
+        licenses {
+            license {
+                name 'GNU LESSER GENERAL PUBLIC LICENSE 3.0'
+                url 'http://www.gnu.org/licenses/lgpl.txt'
             }
         }
+        developers {
+            developer {
+                id 'xserv'
+                name 'Xserv'
+                email 'amatig@gmail.com'
+            }
+        }
+        scm {
+            connection gitUrl
+            developerConnection gitUrl
+            url siteUrl
+
+        }
+    }
 }
 
 dependencies {

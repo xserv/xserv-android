@@ -3,22 +3,29 @@ package com.mi.example;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity implements OnXservEventListener {
     private final static String TAG = "Example";
-    private TextView mMessagesView;
+
     private Xserv xserv;
+    private RecyclerView mRecyclerView;
+    private LinearLayoutManager mLayoutManager;
+    private MyAdapter mAdapter;
+    private ArrayList<JSONObject> mDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +34,21 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mMessagesView = (TextView) findViewById(R.id.messages);
+        mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+
+        // use this setting to improve performance if you know that changes
+        // in content do not change the layout size of the RecyclerView
+        mRecyclerView.setHasFixedSize(true);
+
+        // use a linear layout manager
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        mDataSource = new ArrayList<>();
+
+        // specify an adapter (see also next example)
+        mAdapter = new MyAdapter(mDataSource);
+        mRecyclerView.setAdapter(mAdapter);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -42,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.bind("milano", "all");
+                xserv.trigger("milano", "all", "test messaggio android");
             }
         });
 
@@ -51,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
         xserv.setOnEventListener(this);
 
-        xserv.bind("milano", "pippo");
+        xserv.bind("milano", "all");
 
         xserv.connect();
     }
@@ -94,8 +115,16 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnEvents(JSONObject json) {
+    public void OnEvents(final JSONObject json) {
         Log.d(TAG, "EVENT " + json.toString());
+
+        mDataSource.add(json);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override
