@@ -86,8 +86,64 @@ public class Xserv {
         isDebug = flag;
     }
 
-    public boolean isConnected() {
-        return mConn != null && isConnect;
+    private void onOpen() {
+        if (mListeners != null) {
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    mListeners.OnOpen();
+                }
+            });
+        }
+    }
+
+    private void onClose() {
+        if (mListeners != null) {
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    mListeners.OnClose();
+                }
+            });
+        }
+    }
+
+    private void onError() {
+        if (mListeners != null) {
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    mListeners.OnError();
+                }
+            });
+        }
+    }
+
+    private void onEvents(final JSONObject json) {
+        if (mListeners != null) {
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    mListeners.OnEvents(json);
+                }
+            });
+        }
+    }
+
+    private void onEventsOp(final JSONObject json) {
+        if (mListeners != null) {
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    mListeners.OnEventsOp(json);
+                }
+            });
+        }
     }
 
     private void addOtherWsCallback(WebSocket ws) {
@@ -95,26 +151,18 @@ public class Xserv {
 
             @Override
             public void onCompleted(Exception ignored) {
-                mHandler.post(new Runnable() {
+                if (isDebug) {
+                    Log.d(TAG, "close");
+                }
 
-                    @Override
-                    public void run() {
-                        if (isDebug) {
-                            Log.d(TAG, "close");
-                        }
+                isConnect = false;
+                is_finish_ops = false;
 
-                        isConnect = false;
-                        is_finish_ops = false;
+                if (autoreconnect) {
+                    setTimeout();
+                }
 
-                        if (autoreconnect) {
-                            setTimeout();
-                        }
-
-                        if (mListeners != null) {
-                            mListeners.OnClose();
-                        }
-                    }
-                });
+                onClose();
             }
         });
 
@@ -122,88 +170,82 @@ public class Xserv {
 
             @Override
             public void onStringAvailable(final String event) {
-                mHandler.post(new Runnable() {
+                if (isDebug) {
+                    Log.d(TAG, "raw " + event);
+                }
 
-                    @Override
-                    public void run() {
-                        if (isDebug) {
-                            Log.d(TAG, "raw " + event);
+                if (!event.startsWith(OP_SEP)) {
+                    JSONObject json = null;
+                    try {
+                        json = new JSONObject(event);
+                        try {
+                            String message = json.getString("message");
+                            Object j = new JSONTokener(message).nextValue();
+                            if (j instanceof JSONObject) {
+                                json.put("message", new JSONObject(message));
+                            }
+                        } catch (JSONException ignored) {
+                            // e2.printStackTrace();
                         }
+                    } catch (JSONException ignored) {
+                        // e1.printStackTrace();
+                    }
 
-                        if (!event.startsWith(OP_SEP)) {
-                            JSONObject json = null;
-                            try {
-                                json = new JSONObject(event);
+                    onEvents(json);
+                } else {
+                    String[] arr = event.split(OP_SEP, -1);
+                    if (arr.length >= 7) {
+                        // data structure json array o object
+                        Object data_json = JSONObject.NULL;
+                        String data = arr[5];
+                        if (data != null) {
+                            byte[] b = Base64.decode(data, Base64.DEFAULT);
+                            if (b.length > 0) {
                                 try {
-                                    String message = json.getString("message");
-                                    Object j = new JSONTokener(message).nextValue();
+                                    String raw = new String(b, "UTF-8");
+                                    Object j = new JSONTokener(raw).nextValue();
                                     if (j instanceof JSONObject) {
-                                        json.put("message", new JSONObject(message));
+                                        data_json = new JSONObject(raw);
+                                    } else if (j instanceof JSONArray) {
+                                        data_json = new JSONArray(raw);
                                     }
-                                } catch (JSONException ignored) {
-                                    // e2.printStackTrace();
-                                }
-                            } catch (JSONException ignored) {
-                                // e1.printStackTrace();
-                            }
-
-                            if (mListeners != null) {
-                                mListeners.OnEvents(json);
-                            }
-                        } else {
-                            String[] arr = event.split(OP_SEP, -1);
-                            if (arr.length >= 7) {
-                                // data structure json array o object
-                                Object data_json = JSONObject.NULL;
-                                String data = arr[5];
-                                if (data != null) {
-                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                    if (b.length > 0) {
-                                        try {
-                                            String raw = new String(b, "UTF-8");
-                                            Object j = new JSONTokener(raw).nextValue();
-                                            if (j instanceof JSONObject) {
-                                                data_json = new JSONObject(raw);
-                                            } else if (j instanceof JSONArray) {
-                                                data_json = new JSONArray(raw);
-                                            }
-                                        } catch (JSONException | UnsupportedEncodingException e1) {
-                                            e1.printStackTrace();
-                                        }
-                                    }
-                                }
-
-                                JSONObject json = new JSONObject();
-                                int rc = Integer.parseInt(arr[1]);
-                                int op = Integer.parseInt(arr[2]);
-                                String topic = arr[3];
-
-                                try {
-                                    json.put("rc", rc);
-                                    json.put("op", op);
-                                    json.put("name", stringify_op(op));
-                                    json.put("topic", topic);
-                                    json.put("event", arr[4]);
-                                    json.put("data", data_json);
-                                    json.put("descr", arr[6]);
-                                } catch (JSONException e1) {
+                                } catch (JSONException | UnsupportedEncodingException e1) {
                                     e1.printStackTrace();
                                 }
-
-                                // bind privata ok
-                                if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
-                                    add_user_data((JSONObject) data_json);
-                                }
-
-                                if (mListeners != null) {
-                                    mListeners.OnEventsOp(json);
-                                }
                             }
                         }
+
+                        JSONObject json = new JSONObject();
+                        int rc = Integer.parseInt(arr[1]);
+                        int op = Integer.parseInt(arr[2]);
+                        String topic = arr[3];
+
+                        try {
+                            json.put("rc", rc);
+                            json.put("op", op);
+                            json.put("name", stringifyOp(op));
+                            json.put("topic", topic);
+                            json.put("event", arr[4]);
+                            json.put("data", data_json);
+                            json.put("descr", arr[6]);
+                        } catch (JSONException e1) {
+                            e1.printStackTrace();
+                        }
+
+                        // bind privata ok
+                        if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
+                            addUserData((JSONObject) data_json);
+                        }
+
+                        onEventsOp(json);
                     }
-                });
+                }
             }
         });
+    }
+
+    public boolean isConnected() {
+        return mConn != null && isConnect;
     }
 
     public void connect() {
@@ -215,40 +257,30 @@ public class Xserv {
 
                 @Override
                 public void onCompleted(final Exception e, final WebSocket ws) {
-                    mHandler.post(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            if (e == null) {
-                                if (isDebug) {
-                                    Log.d(TAG, "open");
-                                }
-
-                                addOtherWsCallback(ws);
-
-                                isConnect = true;
-
-                                for (JSONObject op : mOps) {
-                                    send(op);
-                                }
-
-                                is_finish_ops = true;
-
-                                if (mListeners != null) {
-                                    mListeners.OnOpen();
-                                }
-                            } else {
-                                // eccezione, error socket
-                                if (autoreconnect) {
-                                    setTimeout();
-                                }
-
-                                if (mListeners != null) {
-                                    mListeners.OnError();
-                                }
-                            }
+                    if (e == null) {
+                        if (isDebug) {
+                            Log.d(TAG, "open");
                         }
-                    });
+
+                        addOtherWsCallback(ws);
+
+                        isConnect = true;
+
+                        for (JSONObject op : mOps) {
+                            send(op);
+                        }
+
+                        is_finish_ops = true;
+
+                        onOpen();
+                    } else {
+                        // eccezione, error socket
+                        if (autoreconnect) {
+                            setTimeout();
+                        }
+
+                        onError();
+                    }
                 }
             });
         }
@@ -316,7 +348,7 @@ public class Xserv {
                     } catch (JSONException ignored) {
                     }
 
-                    SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+                    final SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
                     request.setContentType("application/json; charset=UTF-8");
                     request.setParam("topic", topic);
                     request.setParam("user", auth_user);
@@ -335,42 +367,46 @@ public class Xserv {
                                 new_json.put("topic", json.get("topic"));
                                 new_json.put("event", json.get("event"));
                             } catch (JSONException ignored) {
-                                // e3.printStackTrace();
+                                // e.printStackTrace();
                             }
-                            ws_send(new_json);
+
+                            try {
+                                JSONObject response = new JSONObject(output);
+                                new_json.put("arg1", request.getParam("user"));
+                                new_json.put("arg2", JSONObject.quote(response.getString("data")));
+                                new_json.put("arg3", response.getString("sign"));
+                            } catch (JSONException ignored) {
+                                // e.printStackTrace();
+                            }
+
+                            wsSend(new_json);
                         }
 
                         @Override
                         public void onFail(String output) {
-                            ws_send(json);
+                            wsSend(json);
                         }
                     });
 
                     task.execute(request);
                 } else {
-                    ws_send(json);
+                    wsSend(json);
                 }
             } else {
-                ws_send(json);
+                wsSend(json);
             }
         }
     }
 
-    private void ws_send(final JSONObject json) {
-        mHandler.post(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    mConn.get().send(json.toString());
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+    private void wsSend(final JSONObject json) {
+        try {
+            mConn.get().send(json.toString());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void add_op(JSONObject json) {
+    private void addOp(JSONObject json) {
         int op = 0;
         try {
             op = json.getInt("op");
@@ -388,11 +424,15 @@ public class Xserv {
         }
     }
 
-    private void add_user_data(JSONObject json) {
+    private void addUserData(JSONObject json) {
         mUserData = json;
     }
 
-    private String stringify_op(int code) {
+    public JSONObject getUserData() {
+        return mUserData;
+    }
+
+    private String stringifyOp(int code) {
         switch (code) {
             case BIND:
                 return "bind";
@@ -463,7 +503,7 @@ public class Xserv {
                 } catch (JSONException e1) {
                     e1.printStackTrace();
                 }
-                add_op(data);
+                addOp(data);
             }
         }
     }
@@ -495,7 +535,7 @@ public class Xserv {
                 } catch (JSONException e1) {
                     e1.printStackTrace();
                 }
-                add_op(data);
+                addOp(data);
             }
         }
     }
@@ -517,7 +557,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        add_op(data);
+        addOp(data);
     }
 
     public void historyByTimestamp(String topic, String event, Integer value) {
@@ -537,7 +577,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        add_op(data);
+        addOp(data);
     }
 
     public void presence(String topic, String event) {
@@ -550,7 +590,7 @@ public class Xserv {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        add_op(data);
+        addOp(data);
     }
 
 }
