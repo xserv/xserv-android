@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.trigger("milano", "all", "test messaggio android");
+                xserv.trigger("@milano", "all", "test messaggio android");
                 /*try {
                     JSONObject json = new JSONObject();
                     json.put("message", "Giovanni");
