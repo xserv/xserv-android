@@ -4,6 +4,9 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -68,10 +71,10 @@ public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements
             conn.setConnectTimeout(mTimeoutConnection /* milliseconds */);
 
             if (req.getUserAgent() != null && req.getUserAgent().length() > 0) {
-                conn.setRequestProperty("User-Agent", req.getUserAgent());
+                conn.addRequestProperty("User-Agent", req.getUserAgent());
             }
             if (req.getContentType() != null && req.getContentType().length() > 0) {
-                conn.setRequestProperty("Content-Type", req.getContentType());
+                conn.addRequestProperty("Content-Type", req.getContentType());
             }
             // conn.setUseCaches(false);
 
@@ -107,24 +110,35 @@ public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements
 
     private void composeRequestPost(HttpURLConnection conn, IRequest req) throws IOException {
         conn.setDoOutput(true);
+        String query = null;
 
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-
-        for (String key : req.getParamsKey()) {
-            if (first) {
-                first = false;
-            } else {
-                sb.append("&");
+        if (req.getContentType() != null && req.getContentType().startsWith("application/json")) {
+            JSONObject json = new JSONObject();
+            for (String key : req.getParamsKey()) {
+                try {
+                    json.put(key, req.getParam(key));
+                } catch (JSONException ignored) {
+                    // e.printStackTrace();
+                }
             }
-            sb.append(URLEncoder.encode(key, "UTF-8"));
-            sb.append("=");
-            sb.append(URLEncoder.encode(req.getParam(key), "UTF-8"));
+            query = json.toString();
+        } else {
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            for (String key : req.getParamsKey()) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append("&");
+                }
+                sb.append(URLEncoder.encode(key, "UTF-8"));
+                sb.append("=");
+                sb.append(URLEncoder.encode(req.getParam(key), "UTF-8"));
+            }
+            query = sb.toString();
         }
 
-        String query = sb.toString();
-
-        if (!query.isEmpty()) {
+        if (query != null && query.length() > 0) {
             OutputStream os = conn.getOutputStream();
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
             writer.write(query);
