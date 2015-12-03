@@ -257,20 +257,21 @@ public class Xserv extends XservBase {
         if (isConnected()) {
             int op = 0;
             String topic = "";
-            JSONObject auth_endpoint = null;
             try {
                 op = json.getInt("op");
                 topic = json.getString("topic");
             } catch (JSONException ignored) {
                 // e.printStackTrace();
             }
-            try {
-                auth_endpoint = json.getJSONObject("auth_endpoint");
-            } catch (JSONException ignored) {
-                // e.printStackTrace();
-            }
 
             if (op == BIND && isPrivateTopic(topic)) {
+                JSONObject auth_endpoint = null;
+                try {
+                    auth_endpoint = json.getJSONObject("auth_endpoint");
+                } catch (JSONException ignored) {
+                    // e.printStackTrace();
+                }
+
                 if (auth_endpoint != null) {
                     String auth_url = DEFAULT_AUTH_URL + mAppId;
                     String auth_user = "";
