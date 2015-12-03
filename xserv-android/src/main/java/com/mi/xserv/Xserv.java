@@ -1,7 +1,5 @@
 package com.mi.xserv;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 
@@ -23,7 +21,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class Xserv {
+public class Xserv extends Base {
     public final static int TRIGGER = 200;
     public final static int BIND = 201;
     public final static int UNBIND = 202;
@@ -53,11 +51,9 @@ public class Xserv {
     private final static String OP_SEP = ":";
 
     // attributes
-    private Handler mHandler = new Handler(Looper.getMainLooper());
     private String mAppId;
     private Future<WebSocket> mConn;
     private boolean is_finish_ops;
-    private OnXservEventListener mListeners;
     private ArrayList<JSONObject> mOps;
     private int reconnectInterval;
     private boolean autoreconnect;
@@ -66,10 +62,11 @@ public class Xserv {
     private boolean isDebug;
 
     public Xserv(String app_id) {
+        super();
+        
         mAppId = app_id;
         mConn = null;
         is_finish_ops = false;
-        mListeners = null;
         mOps = new ArrayList<>();
         reconnectInterval = DEFAULT_RI;
         autoreconnect = false;
@@ -86,61 +83,43 @@ public class Xserv {
         isDebug = flag;
     }
 
-    private void onOpen() {
-        if (mListeners != null) {
-            mHandler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    mListeners.OnOpen();
-                }
-            });
-        }
+    public boolean isConnected() {
+        return mConn != null && isConnect;
     }
 
-    private void onClose() {
-        if (mListeners != null) {
-            mHandler.post(new Runnable() {
+    public void connect() {
+        autoreconnect = true;
+
+        if (!isConnected()) {
+            AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
+            mConn = as.websocket(URL, null, new AsyncHttpClient.WebSocketConnectCallback() {
 
                 @Override
-                public void run() {
-                    mListeners.OnClose();
-                }
-            });
-        }
-    }
+                public void onCompleted(final Exception e, final WebSocket ws) {
+                    if (e == null) {
+                        if (isDebug) {
+                            Log.d(TAG, "open");
+                        }
 
-    private void onError() {
-        if (mListeners != null) {
-            mHandler.post(new Runnable() {
+                        addOtherWsCallback(ws);
 
-                @Override
-                public void run() {
-                    mListeners.OnError();
-                }
-            });
-        }
-    }
+                        isConnect = true;
 
-    private void onEvents(final JSONObject json) {
-        if (mListeners != null) {
-            mHandler.post(new Runnable() {
+                        for (JSONObject op : mOps) {
+                            send(op);
+                        }
 
-                @Override
-                public void run() {
-                    mListeners.OnEvents(json);
-                }
-            });
-        }
-    }
+                        is_finish_ops = true;
 
-    private void onEventsOp(final JSONObject json) {
-        if (mListeners != null) {
-            mHandler.post(new Runnable() {
+                        onOpen();
+                    } else {
+                        // eccezione, error socket
+                        if (autoreconnect) {
+                            setTimeout();
+                        }
 
-                @Override
-                public void run() {
-                    mListeners.OnEventsOp(json);
+                        onError();
+                    }
                 }
             });
         }
@@ -242,48 +221,6 @@ public class Xserv {
                 }
             }
         });
-    }
-
-    public boolean isConnected() {
-        return mConn != null && isConnect;
-    }
-
-    public void connect() {
-        autoreconnect = true;
-
-        if (!isConnected()) {
-            AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-            mConn = as.websocket(URL, null, new AsyncHttpClient.WebSocketConnectCallback() {
-
-                @Override
-                public void onCompleted(final Exception e, final WebSocket ws) {
-                    if (e == null) {
-                        if (isDebug) {
-                            Log.d(TAG, "open");
-                        }
-
-                        addOtherWsCallback(ws);
-
-                        isConnect = true;
-
-                        for (JSONObject op : mOps) {
-                            send(op);
-                        }
-
-                        is_finish_ops = true;
-
-                        onOpen();
-                    } else {
-                        // eccezione, error socket
-                        if (autoreconnect) {
-                            setTimeout();
-                        }
-
-                        onError();
-                    }
-                }
-            });
-        }
     }
 
     private void setTimeout() {
@@ -450,10 +387,6 @@ public class Xserv {
                 return "trigger";
         }
         return "";
-    }
-
-    public void setOnEventListener(OnXservEventListener onEventListener) {
-        mListeners = onEventListener;
     }
 
     public void trigger(String topic, String event, JSONObject message) {
