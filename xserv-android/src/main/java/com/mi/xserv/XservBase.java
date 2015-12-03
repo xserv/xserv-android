@@ -5,11 +5,11 @@ import android.os.Looper;
 
 import org.json.JSONObject;
 
-public class Base {
+public class XservBase {
     protected Handler mHandler = new Handler(Looper.getMainLooper());
     protected OnXservEventListener mListeners;
 
-    public Base() {
+    public XservBase() {
         mListeners = null;
     }
 

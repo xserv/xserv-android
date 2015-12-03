@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class Xserv extends Base {
+public class Xserv extends XservBase {
     public final static int TRIGGER = 200;
     public final static int BIND = 201;
     public final static int UNBIND = 202;
@@ -63,7 +63,7 @@ public class Xserv extends Base {
 
     public Xserv(String app_id) {
         super();
-        
+
         mAppId = app_id;
         mConn = null;
         is_finish_ops = false;
