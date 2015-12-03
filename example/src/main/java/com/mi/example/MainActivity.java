@@ -80,7 +80,15 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
         xserv.setOnEventListener(this);
 
-        xserv.bind("milano", "all");
+        JSONObject auth_endpoint = new JSONObject();
+        try {
+            auth_endpoint.put("user", "amatig");
+            auth_endpoint.put("pass", "pippo");
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
+        }
+        xserv.bind("@milano", "all", auth_endpoint);
+        // xserv.bind("milano", "all");
 
         xserv.connect();
     }

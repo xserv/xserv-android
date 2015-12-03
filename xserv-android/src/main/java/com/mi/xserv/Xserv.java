@@ -8,6 +8,9 @@ import android.util.Log;
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
+import com.mi.xserv.http.ITaskListener;
+import com.mi.xserv.http.SimpleHttpRequest;
+import com.mi.xserv.http.SimpleHttpTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -261,15 +264,69 @@ public class Xserv {
         if (isConnected()) {
             int op = 0;
             String topic = "";
+            JSONObject auth_endpoint = null;
             try {
                 op = json.getInt("op");
                 topic = json.getString("topic");
-            } catch (JSONException e) {
-                e.printStackTrace();
+            } catch (JSONException ignored) {
+                // e.printStackTrace();
+            }
+            try {
+                auth_endpoint = json.getJSONObject("auth_endpoint");
+            } catch (JSONException ignored) {
+                // e.printStackTrace();
             }
 
             if (op == BIND && isPrivateTopic(topic)) {
+                if (auth_endpoint != null) {
+                    String auth_url = DEFAULT_AUTH_URL + mAppId;
+                    String auth_user = "";
+                    String auth_pass = "";
+                    try {
+                        auth_url = auth_endpoint.getString("endpoint");
+                    } catch (JSONException ignored) {
+                    }
+                    try {
+                        auth_user = auth_endpoint.getString("user");
+                        auth_pass = auth_endpoint.getString("pass");
+                    } catch (JSONException ignored) {
+                    }
 
+                    SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+                    request.setContentType("application/json; charset=UTF-8");
+
+                    request.setParam("topic", topic);
+                    request.setParam("user", auth_user);
+                    request.setParam("pass", auth_pass);
+
+                    SimpleHttpTask task = new SimpleHttpTask();
+
+                    task.setOnResponseListener(new ITaskListener.OnResponseListener() {
+                        @Override
+                        public void onResponse(final String output) {
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d(TAG, "http response " + output);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFail(final String output) {
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d(TAG, "http fail " + output);
+                                }
+                            });
+                        }
+                    });
+
+                    task.execute(request);
+                }
             } else {
                 try {
                     mConn.get().send(json.toString());
