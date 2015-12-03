@@ -43,7 +43,7 @@ public class Xserv {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String SERVER = "192.168.1.131:4321";
+    private final static String SERVER = "192.168.130.153:4321";
     private final static String URL = "ws://" + SERVER + "/ws";
     private final static String DEFAULT_AUTH_URL = "http://" + SERVER + "/auth_user/";
     private final static int DEFAULT_RI = 5000;
@@ -58,7 +58,7 @@ public class Xserv {
     private boolean autoreconnect;
     private JSONObject mUserData;
     private boolean isConnect;
-    private boolean debug;
+    private boolean isDebug;
 
     public Xserv(String app_id) {
         mAppId = app_id;
@@ -70,7 +70,7 @@ public class Xserv {
         autoreconnect = false;
         mUserData = new JSONObject();
         isConnect = false;
-        debug = false;
+        isDebug = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -78,7 +78,7 @@ public class Xserv {
     }
 
     public void setDebug(boolean flag) {
-        debug = flag;
+        isDebug = flag;
     }
 
     public boolean isConnected() {
@@ -95,7 +95,7 @@ public class Xserv {
                         @Override
                         public void onCompleted(Exception e, WebSocket ws) {
                             if (e == null) {
-                                if (debug) {
+                                if (isDebug) {
                                     Log.d(TAG, "open");
                                 }
 
@@ -105,7 +105,7 @@ public class Xserv {
 
                                     @Override
                                     public void onCompleted(Exception ignored) {
-                                        if (debug) {
+                                        if (isDebug) {
                                             Log.d(TAG, "close");
                                         }
 
@@ -126,7 +126,7 @@ public class Xserv {
 
                                     @Override
                                     public void onStringAvailable(final String event) {
-                                        if (debug) {
+                                        if (isDebug) {
                                             Log.d(TAG, "raw " + event);
                                         }
 
@@ -134,8 +134,13 @@ public class Xserv {
                                             JSONObject json = null;
                                             try {
                                                 json = new JSONObject(event);
-                                            } catch (JSONException e1) {
-                                                e1.printStackTrace();
+                                                try {
+                                                    json.put("message", new JSONObject(json.getString("message")));
+                                                } catch (JSONException ignored) {
+                                                    // e2.printStackTrace();
+                                                }
+                                            } catch (JSONException ignored) {
+                                                // e1.printStackTrace();
                                             }
 
                                             if (mListeners != null) {
@@ -223,7 +228,7 @@ public class Xserv {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (debug) {
+                if (isDebug) {
                     Log.d(TAG, "try reconnect");
                 }
 
@@ -315,6 +320,10 @@ public class Xserv {
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
         mListeners = onEventListener;
+    }
+
+    public void trigger(String topic, String event, JSONObject message) {
+        trigger(topic, event, message.toString());
     }
 
     public void trigger(String topic, String event, String message) {

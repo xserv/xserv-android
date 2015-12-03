@@ -14,6 +14,7 @@ import android.view.View;
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 // xserv.disconnect();
-                xserv.historyById("milano", "all", 0, 2000);
+                xserv.historyById("milano", "all", 0);
             }
         });
 
@@ -64,6 +65,13 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 xserv.trigger("milano", "all", "test messaggio android");
+                try {
+                    JSONObject json = new JSONObject();
+                    json.put("message", "Giovanni");
+                    xserv.trigger("milano", "all", json);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
