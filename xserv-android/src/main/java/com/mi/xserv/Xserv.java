@@ -196,7 +196,6 @@ public class Xserv extends XservBase {
                         int rc = Integer.parseInt(arr[1]);
                         int op = Integer.parseInt(arr[2]);
                         String topic = arr[3];
-
                         try {
                             json.put("rc", rc);
                             json.put("op", op);
