@@ -1,7 +1,6 @@
 package com.mi.xserv;
 
 import android.util.Base64;
-import android.util.Log;
 
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
@@ -53,34 +52,28 @@ public class Xserv extends XservBase {
     // attributes
     private String mAppId;
     private Future<WebSocket> mConn;
-    private boolean is_finish_ops;
+    private boolean isFinishOps;
     private ArrayList<JSONObject> mOps;
-    private int reconnectInterval;
-    private boolean autoreconnect;
+    private int mReconnectInterval;
+    private boolean isAutoReconnect;
     private JSONObject mUserData;
     private boolean isConnect;
-    private boolean isDebug;
 
     public Xserv(String app_id) {
         super();
 
         mAppId = app_id;
         mConn = null;
-        is_finish_ops = false;
+        isFinishOps = false;
         mOps = new ArrayList<>();
-        reconnectInterval = DEFAULT_RI;
-        autoreconnect = false;
+        mReconnectInterval = DEFAULT_RI;
+        isAutoReconnect = false;
         mUserData = new JSONObject();
         isConnect = false;
-        isDebug = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
         return topic.startsWith("@");
-    }
-
-    public void setDebug(boolean flag) {
-        isDebug = flag;
     }
 
     public boolean isConnected() {
@@ -88,7 +81,7 @@ public class Xserv extends XservBase {
     }
 
     public void connect() {
-        autoreconnect = true;
+        isAutoReconnect = true;
 
         if (!isConnected()) {
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
@@ -97,24 +90,18 @@ public class Xserv extends XservBase {
                 @Override
                 public void onCompleted(final Exception e, final WebSocket ws) {
                     if (e == null) {
-                        if (isDebug) {
-                            Log.d(TAG, "open");
-                        }
-
                         setOtherWsCallback(ws);
-
                         isConnect = true;
 
                         for (JSONObject op : mOps) {
                             send(op);
                         }
-
-                        is_finish_ops = true;
+                        isFinishOps = true;
 
                         onOpen();
                     } else {
                         // eccezione, error socket
-                        if (autoreconnect) {
+                        if (isAutoReconnect) {
                             setTimeout();
                         }
 
@@ -130,14 +117,10 @@ public class Xserv extends XservBase {
 
             @Override
             public void onCompleted(Exception ignored) {
-                if (isDebug) {
-                    Log.d(TAG, "close");
-                }
-
                 isConnect = false;
-                is_finish_ops = false;
+                isFinishOps = false;
 
-                if (autoreconnect) {
+                if (isAutoReconnect) {
                     setTimeout();
                 }
 
@@ -149,10 +132,6 @@ public class Xserv extends XservBase {
 
             @Override
             public void onStringAvailable(final String event) {
-                if (isDebug) {
-                    Log.d(TAG, "raw " + event);
-                }
-
                 if (!event.startsWith(OP_SEP)) {
                     JSONObject json = null;
                     try {
@@ -224,17 +203,13 @@ public class Xserv extends XservBase {
 
             @Override
             public void run() {
-                if (isDebug) {
-                    Log.d(TAG, "try reconnect");
-                }
-
                 connect();
             }
-        }, reconnectInterval);
+        }, mReconnectInterval);
     }
 
     public void disconnect() {
-        autoreconnect = false;
+        isAutoReconnect = false;
 
         if (isConnected()) {
             try {
@@ -246,7 +221,7 @@ public class Xserv extends XservBase {
     }
 
     public void setReconnectInterval(Integer value) {
-        reconnectInterval = value;
+        mReconnectInterval = value;
     }
 
     private void send(final JSONObject json) {
@@ -349,17 +324,17 @@ public class Xserv extends XservBase {
             mOps.add(json);
         }
 
-        if (is_finish_ops) {
+        if (isFinishOps) {
             send(json);
         }
     }
 
-    private void setUserData(JSONObject json) {
-        mUserData = json;
-    }
-
     public JSONObject getUserData() {
         return mUserData;
+    }
+
+    private void setUserData(JSONObject json) {
+        mUserData = json;
     }
 
     private String stringifyOp(int code) {
@@ -387,7 +362,7 @@ public class Xserv extends XservBase {
     }
 
     public void trigger(String topic, String event, String message) {
-        if (is_finish_ops) {
+        if (isFinishOps) {
             JSONObject data = new JSONObject();
             try {
                 data.put("app_id", mAppId);
