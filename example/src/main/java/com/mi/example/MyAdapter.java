@@ -42,6 +42,12 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
+        /*try {
+            JSONObject json = item.getJSONObject("message");
+            message = json.getString("message");
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
+        }*/
 
         holder.text.setText(message);
         holder.timestamp.setText(String.valueOf(timestamp));

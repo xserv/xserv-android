@@ -135,7 +135,11 @@ public class Xserv {
                                             try {
                                                 json = new JSONObject(event);
                                                 try {
-                                                    json.put("message", new JSONObject(json.getString("message")));
+                                                    String message = json.getString("message");
+                                                    Object j = new JSONTokener(message).nextValue();
+                                                    if (j instanceof JSONObject) {
+                                                        json.put("message", new JSONObject(message));
+                                                    }
                                                 } catch (JSONException ignored) {
                                                     // e2.printStackTrace();
                                                 }
