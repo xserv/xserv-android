@@ -213,7 +213,7 @@ public class Xserv extends XservBase {
 
                         // bind privata ok
                         if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
-                            addUserData((JSONObject) data_json);
+                            setUserData((JSONObject) data_json);
                         }
 
                         onEventsOp(json);
@@ -309,10 +309,10 @@ public class Xserv extends XservBase {
                             }
 
                             try {
-                                JSONObject response = new JSONObject(output);
+                                JSONObject data_sign = new JSONObject(output);
                                 new_json.put("arg1", request.getParam("user"));
-                                new_json.put("arg2", JSONObject.quote(response.getString("data")));
-                                new_json.put("arg3", response.getString("sign"));
+                                new_json.put("arg2", JSONObject.quote(data_sign.getString("data")));
+                                new_json.put("arg3", data_sign.getString("sign"));
                             } catch (JSONException ignored) {
                                 // e.printStackTrace();
                             }
@@ -362,7 +362,7 @@ public class Xserv extends XservBase {
         }
     }
 
-    private void addUserData(JSONObject json) {
+    private void setUserData(JSONObject json) {
         mUserData = json;
     }
 
