@@ -135,12 +135,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         //Log.d(TAG, "EVENT " + json.toString());
 
         mDataSource.add(json);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mAdapter.notifyDataSetChanged();
-            }
-        });
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override
