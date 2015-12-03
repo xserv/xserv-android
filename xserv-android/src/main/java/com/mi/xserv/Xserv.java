@@ -101,7 +101,7 @@ public class Xserv extends XservBase {
                             Log.d(TAG, "open");
                         }
 
-                        addOtherWsCallback(ws);
+                        setOtherWsCallback(ws);
 
                         isConnect = true;
 
@@ -125,7 +125,7 @@ public class Xserv extends XservBase {
         }
     }
 
-    private void addOtherWsCallback(WebSocket ws) {
+    private void setOtherWsCallback(WebSocket ws) {
         ws.setClosedCallback(new CompletedCallback() {
 
             @Override
