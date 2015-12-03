@@ -90,7 +90,7 @@ public class Xserv {
         return mConn != null && isConnect;
     }
 
-    private void addOtherCallbackWs(WebSocket ws) {
+    private void addOtherWsCallback(WebSocket ws) {
         ws.setClosedCallback(new CompletedCallback() {
 
             @Override
@@ -224,7 +224,7 @@ public class Xserv {
                                     Log.d(TAG, "open");
                                 }
 
-                                addOtherCallbackWs(ws);
+                                addOtherWsCallback(ws);
 
                                 isConnect = true;
 
@@ -327,51 +327,47 @@ public class Xserv {
                     task.setOnResponseListener(new ITaskListener.OnResponseListener() {
 
                         @Override
-                        public void onResponse(final String output) {
-                            mHandler.post(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    final JSONObject new_json = new JSONObject();
-                                    try {
-                                        new_json.put("topic", json.get("topic"));
-                                        new_json.put("event", json.get("event"));
-                                    } catch (JSONException ignored) {
-                                        // e3.printStackTrace();
-                                    }
-                                    real_send(new_json);
-                                }
-                            });
+                        public void onResponse(String output) {
+                            JSONObject new_json = new JSONObject();
+                            try {
+                                new_json.put("app_id", json.get("app_id"));
+                                new_json.put("op", json.get("op"));
+                                new_json.put("topic", json.get("topic"));
+                                new_json.put("event", json.get("event"));
+                            } catch (JSONException ignored) {
+                                // e3.printStackTrace();
+                            }
+                            ws_send(new_json);
                         }
 
                         @Override
-                        public void onFail(final String output) {
-                            mHandler.post(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    real_send(json);
-                                }
-                            });
+                        public void onFail(String output) {
+                            ws_send(json);
                         }
                     });
 
                     task.execute(request);
                 } else {
-                    real_send(json);
+                    ws_send(json);
                 }
             } else {
-                real_send(json);
+                ws_send(json);
             }
         }
     }
 
-    private void real_send(JSONObject json) {
-        try {
-            mConn.get().send(json.toString());
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+    private void ws_send(final JSONObject json) {
+        mHandler.post(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    mConn.get().send(json.toString());
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void add_op(JSONObject json) {

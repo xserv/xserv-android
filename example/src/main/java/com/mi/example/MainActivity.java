@@ -65,13 +65,13 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 xserv.trigger("milano", "all", "test messaggio android");
-                try {
+                /*try {
                     JSONObject json = new JSONObject();
                     json.put("message", "Giovanni");
                     xserv.trigger("milano", "all", json);
                 } catch (JSONException e) {
                     e.printStackTrace();
-                }
+                }*/
             }
         });
 
