@@ -64,7 +64,9 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.trigger("@milano", "all", "test messaggio android");
+                xserv.trigger("milano", "all", "test messaggio android");
+                xserv.trigger("@milano", "all", "test messaggio android privato");
+
                 /*try {
                     JSONObject json = new JSONObject();
                     json.put("message", "Giovanni");
@@ -134,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     public void OnEvents(final JSONObject json) {
         //Log.d(TAG, "EVENT " + json.toString());
 
-        mDataSource.add(json);
+        mDataSource.add(0, json);
         mAdapter.notifyDataSetChanged();
     }
 
