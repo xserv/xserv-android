@@ -164,10 +164,8 @@ public class Xserv extends XservBase {
                                 json.put("message", new JSONObject(message));
                             }
                         } catch (JSONException ignored) {
-                            // e2.printStackTrace();
                         }
                     } catch (JSONException ignored) {
-                        // e1.printStackTrace();
                     }
 
                     onEvents(json);
@@ -207,8 +205,7 @@ public class Xserv extends XservBase {
                             json.put("event", arr[4]);
                             json.put("data", data_json);
                             json.put("descr", arr[6]);
-                        } catch (JSONException e1) {
-                            e1.printStackTrace();
+                        } catch (JSONException ignore) {
                         }
 
                         // bind privata ok
@@ -261,7 +258,6 @@ public class Xserv extends XservBase {
                 op = json.getInt("op");
                 topic = json.getString("topic");
             } catch (JSONException ignored) {
-                // e.printStackTrace();
             }
 
             if (op == BIND && isPrivateTopic(topic)) {
@@ -269,7 +265,6 @@ public class Xserv extends XservBase {
                 try {
                     auth_endpoint = json.getJSONObject("auth_endpoint");
                 } catch (JSONException ignored) {
-                    // e.printStackTrace();
                 }
 
                 if (auth_endpoint != null) {
@@ -305,7 +300,6 @@ public class Xserv extends XservBase {
                                 new_json.put("topic", json.get("topic"));
                                 new_json.put("event", json.get("event"));
                             } catch (JSONException ignored) {
-                                // e.printStackTrace();
                             }
 
                             try {
@@ -314,7 +308,6 @@ public class Xserv extends XservBase {
                                 new_json.put("arg2", JSONObject.quote(data_sign.getString("data")));
                                 new_json.put("arg3", data_sign.getString("sign"));
                             } catch (JSONException ignored) {
-                                // e.printStackTrace();
                             }
 
                             wsSend(new_json);
