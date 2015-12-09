@@ -279,7 +279,7 @@ public class Xserv extends XservBase {
                             try {
                                 JSONObject data_sign = new JSONObject(output);
                                 new_json.put("arg1", request.getParam("user"));
-                                new_json.put("arg2", JSONObject.quote(data_sign.getString("data")));
+                                new_json.put("arg2", data_sign.getString("data"));
                                 new_json.put("arg3", data_sign.getString("sign"));
                             } catch (JSONException ignored) {
                             }
