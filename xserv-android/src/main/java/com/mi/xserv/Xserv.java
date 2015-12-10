@@ -288,7 +288,7 @@ public class Xserv extends XservBase {
                         }
 
                         @Override
-                        public void onFail(String output) {
+                        public void onFail() {
                             wsSend(json);
                         }
                     });

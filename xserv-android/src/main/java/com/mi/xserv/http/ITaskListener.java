@@ -9,6 +9,6 @@ public interface ITaskListener {
     interface OnResponseListener {
         void onResponse(String output);
 
-        void onFail(String output);
+        void onFail();
     }
 }

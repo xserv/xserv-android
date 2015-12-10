@@ -110,7 +110,7 @@ public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements
 
     private void composeRequestPost(HttpURLConnection conn, IRequest req) throws IOException {
         conn.setDoOutput(true);
-        String query = null;
+        String query;
 
         if (req.getContentType() != null && req.getContentType().startsWith("application/json")) {
             JSONObject json = new JSONObject();
@@ -165,7 +165,7 @@ public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements
             if (output != null)
                 onResponseListener.onResponse(output);
             else
-                onResponseListener.onFail(output);
+                onResponseListener.onFail();
         }
     }
 

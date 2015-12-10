@@ -55,9 +55,10 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // xserv.disconnect();
-                xserv.historyById("milano", "all", 0);
-                xserv.bind("milano", "all");
+                xserv.disconnect();
+                xserv.connect();
+                //xserv.historyById("milano", "all", 0);
+                //xserv.bind("milano", "all");
             }
         });
 
@@ -65,8 +66,14 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                xserv.trigger("milano", "all", "test messaggio android");
-                xserv.trigger("@milano", "all", "test messaggio android privato");
+                //xserv.trigger("milano", "all", "test messaggio android");
+                //xserv.trigger("@milano", "all", "test messaggio android privato");
+
+                //xserv.connect();
+                xserv.bind("caddsa", "all");
+                xserv.unbind("@milano", "all");
+                xserv.unbind("milano", "all");
+                xserv.bind("milano", "all");
 
                 /*try {
                     JSONObject json = new JSONObject();
@@ -90,8 +97,8 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
-        xserv.bind("@milano", "all", auth_endpoint);
-        // xserv.bind("milano", "all");
+        // xserv.bind("@milano", "all", auth_endpoint);
+        xserv.bind("milano", "all");
 
         xserv.connect();
     }
