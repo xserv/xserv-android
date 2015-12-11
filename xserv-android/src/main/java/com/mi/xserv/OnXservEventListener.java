@@ -6,9 +6,9 @@ public interface OnXservEventListener {
 
     void OnOpen();
 
-    void OnClose();
+    void OnClose(Exception e);
 
-    void OnError();
+    void OnError(Exception e);
 
     void OnEvents(JSONObject json);
 

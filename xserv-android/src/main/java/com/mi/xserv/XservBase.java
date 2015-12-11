@@ -6,8 +6,8 @@ import android.os.Looper;
 import org.json.JSONObject;
 
 public class XservBase {
-    protected Handler mHandler = new Handler(Looper.getMainLooper());
-    protected OnXservEventListener mListeners;
+    final protected Handler mHandler = new Handler(Looper.getMainLooper());
+    private OnXservEventListener mListeners;
 
     public XservBase() {
         mListeners = null;
@@ -29,25 +29,25 @@ public class XservBase {
         }
     }
 
-    protected void onClose() {
+    protected void onClose(final Exception e) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnClose();
+                    mListeners.OnClose(e);
                 }
             });
         }
     }
 
-    protected void onError() {
+    protected void onError(final Exception e) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnError();
+                    mListeners.OnError(e);
                 }
             });
         }

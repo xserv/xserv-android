@@ -16,7 +16,6 @@ import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -43,33 +42,34 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String SERVER = "mobile-italia.com:4321";
+    private final static String SERVER = "192.168.130.153:4321";
     private final static String URL = "ws://" + SERVER + "/ws";
     private final static String DEFAULT_AUTH_URL = "http://" + SERVER + "/auth_user/";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
     // attributes
-    private String mAppId;
+    final private String mAppId;
+    final private ArrayList<JSONObject> mOps;
     private Future<WebSocket> mConn;
-    private boolean isFinishOps;
-    private ArrayList<JSONObject> mOps;
     private int mReconnectInterval;
     private boolean isAutoReconnect;
     private JSONObject mUserData;
-    private boolean isConnect;
+    private boolean isConnected;
+    private boolean inInitialization;
 
     public Xserv(String app_id) {
         super();
 
         mAppId = app_id;
         mConn = null;
-        isFinishOps = false;
         mOps = new ArrayList<>();
-        mReconnectInterval = DEFAULT_RI;
-        isAutoReconnect = false;
         mUserData = new JSONObject();
-        isConnect = false;
+        mReconnectInterval = DEFAULT_RI;
+
+        isAutoReconnect = false;
+        isConnected = false;
+        inInitialization = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -77,13 +77,15 @@ public class Xserv extends XservBase {
     }
 
     public boolean isConnected() {
-        return mConn != null && isConnect;
+        return mConn != null && isConnected;
     }
 
     public void connect() {
         isAutoReconnect = true;
 
-        if (!isConnected()) {
+        if (!isConnected() && !inInitialization) {
+            inInitialization = true;
+
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(URL, null, new AsyncHttpClient.WebSocketConnectCallback() {
 
@@ -91,13 +93,13 @@ public class Xserv extends XservBase {
                 public void onCompleted(final Exception e, final WebSocket ws) {
                     if (e == null) {
                         setOtherWsCallback(ws);
-                        isConnect = true;
+                        isConnected = true;
 
                         for (JSONObject op : mOps) {
                             send(op);
                         }
-                        isFinishOps = true;
 
+                        inInitialization = false;
                         onOpen();
                     } else {
                         // eccezione, error socket
@@ -105,7 +107,8 @@ public class Xserv extends XservBase {
                             setTimeout();
                         }
 
-                        onError();
+                        inInitialization = false;
+                        onError(e);
                     }
                 }
             });
@@ -116,15 +119,15 @@ public class Xserv extends XservBase {
         ws.setClosedCallback(new CompletedCallback() {
 
             @Override
-            public void onCompleted(Exception ignored) {
-                isConnect = false;
-                isFinishOps = false;
+            public void onCompleted(Exception e) {
+                isConnected = false;
+                inInitialization = false;
 
                 if (isAutoReconnect) {
                     setTimeout();
                 }
 
-                onClose();
+                onClose(e);
             }
         });
 
@@ -188,7 +191,9 @@ public class Xserv extends XservBase {
 
                         // bind privata ok
                         if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
-                            setUserData((JSONObject) data_json);
+                            if (data_json instanceof JSONObject) {
+                                setUserData((JSONObject) data_json);
+                            }
                         }
 
                         onEventsOp(json);
@@ -324,9 +329,7 @@ public class Xserv extends XservBase {
             mOps.add(json);
         }
 
-        if (isFinishOps) {
-            send(json);
-        }
+        send(json);
     }
 
     public JSONObject getUserData() {
@@ -362,19 +365,17 @@ public class Xserv extends XservBase {
     }
 
     public void trigger(String topic, String event, String message) {
-        if (isFinishOps) {
-            JSONObject data = new JSONObject();
-            try {
-                data.put("app_id", mAppId);
-                data.put("op", TRIGGER);
-                data.put("topic", topic);
-                data.put("event", event);
-                data.put("arg1", message);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            send(data);
+        JSONObject data = new JSONObject();
+        try {
+            data.put("app_id", mAppId);
+            data.put("op", TRIGGER);
+            data.put("topic", topic);
+            data.put("event", event);
+            data.put("arg1", message);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
+        addOp(data);
     }
 
     public void bind(String topic, String event) {
@@ -382,8 +383,10 @@ public class Xserv extends XservBase {
     }
 
     public void bind(String topic, String event, JSONObject auth_endpoint) {
-        ArrayList<String> topics = new ArrayList<>(Arrays.asList(topic));
-        ArrayList<String> events = new ArrayList<>(Arrays.asList(event));
+        ArrayList<String> topics = new ArrayList<>();
+        topics.add(topic);
+        ArrayList<String> events = new ArrayList<>();
+        events.add(event);
         bind(topics, events, auth_endpoint);
     }
 
@@ -414,13 +417,16 @@ public class Xserv extends XservBase {
     }
 
     public void unbind(String topic, String event) {
-        ArrayList<String> topics = new ArrayList<>(Arrays.asList(topic));
-        ArrayList<String> events = new ArrayList<>(Arrays.asList(event));
+        ArrayList<String> topics = new ArrayList<>();
+        topics.add(topic);
+        ArrayList<String> events = new ArrayList<>();
+        events.add(event);
         unbind(topics, events);
     }
 
     public void unbind(ArrayList<String> topics) {
-        ArrayList<String> events = new ArrayList<>(Arrays.asList(""));
+        ArrayList<String> events = new ArrayList<>();
+        events.add("");
         unbind(topics, events);
     }
 
