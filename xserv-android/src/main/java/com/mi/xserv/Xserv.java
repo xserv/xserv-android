@@ -42,9 +42,10 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String SERVER = "mobile-italia.com:4321";
-    private final static String URL = "ws://" + SERVER + "/ws";
-    private final static String DEFAULT_AUTH_URL = "http://" + SERVER + "/auth_user/";
+    private final static String ADDRESS = "localhost";
+    private final static String PORT = ":4321";
+    private final static String URL = "ws://" + ADDRESS + PORT + "/ws";
+    private final static String DEFAULT_AUTH_URL = "http://" + ADDRESS + PORT + "/auth_user/";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
@@ -121,12 +122,12 @@ public class Xserv extends XservBase {
             @Override
             public void onCompleted(Exception e) {
                 isConnected = false;
-                inInitialization = false;
 
                 if (isAutoReconnect) {
                     setTimeout();
                 }
 
+                inInitialization = false;
                 onClose(e);
             }
         });
