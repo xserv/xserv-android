@@ -57,6 +57,7 @@ public class Xserv extends XservBase {
     private boolean isAutoReconnect;
     private JSONObject mUserData;
     private boolean isConnected;
+    private boolean isBackupAct;
     private boolean inInitialization;
 
     public Xserv(String app_id) {
@@ -230,6 +231,10 @@ public class Xserv extends XservBase {
         mReconnectInterval = value;
     }
 
+    public void setBackupOps(boolean value) {
+        isBackupAct = value;
+    }
+
     private void send(final JSONObject json) {
         if (isConnected()) {
             int op = 0;
@@ -326,7 +331,7 @@ public class Xserv extends XservBase {
         }
 
         // salva tutte op da ripetere su riconnessione
-        if (op == BIND || op == UNBIND) {
+        if (isBackupAct && (op == BIND || op == UNBIND)) {
             mOps.add(json);
         }
 
