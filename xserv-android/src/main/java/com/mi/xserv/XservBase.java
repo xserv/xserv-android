@@ -65,13 +65,13 @@ public class XservBase {
         }
     }
 
-    protected void onEventsOp(final JSONObject json) {
+    protected void onOps(final JSONObject json) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnEventsOp(json);
+                    mListeners.OnOps(json);
                 }
             });
         }

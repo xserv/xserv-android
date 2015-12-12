@@ -198,7 +198,7 @@ public class Xserv extends XservBase {
                             }
                         }
 
-                        onEventsOp(json);
+                        onOps(json);
                     }
                 }
             }

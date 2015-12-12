@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnEventsOp(JSONObject json) {
+    public void OnOps(JSONObject json) {
         Log.d(TAG, "OP " + json.toString());
     }
 }
