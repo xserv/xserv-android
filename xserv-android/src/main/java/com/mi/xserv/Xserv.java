@@ -457,7 +457,7 @@ public class Xserv extends XservBase {
         historyById(topic, event, value, 0);
     }
 
-    public void historyById(String topic, String event, Integer value, Integer limit) {
+    public void historyById(String topic, String event, Integer offset, Integer limit) {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
@@ -465,7 +465,7 @@ public class Xserv extends XservBase {
             data.put("topic", topic);
             data.put("event", event);
             data.put("arg1", HISTORY_ID);
-            data.put("arg2", String.valueOf(value));
+            data.put("arg2", String.valueOf(offset));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
             e.printStackTrace();
@@ -477,7 +477,7 @@ public class Xserv extends XservBase {
         historyByTimestamp(topic, event, value, 0);
     }
 
-    public void historyByTimestamp(String topic, String event, Integer value, Integer limit) {
+    public void historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
         JSONObject data = new JSONObject();
         try {
             data.put("app_id", mAppId);
@@ -485,7 +485,7 @@ public class Xserv extends XservBase {
             data.put("topic", topic);
             data.put("event", event);
             data.put("arg1", HISTORY_TIMESTAMP);
-            data.put("arg2", String.valueOf(value));
+            data.put("arg2", String.valueOf(offset));
             data.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
             e.printStackTrace();
