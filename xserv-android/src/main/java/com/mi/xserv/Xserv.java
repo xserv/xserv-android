@@ -227,12 +227,12 @@ public class Xserv extends XservBase {
         }
     }
 
-    public void setReconnectInterval(Integer value) {
-        mReconnectInterval = value;
+    public void setReconnectInterval(Integer milliseconds) {
+        mReconnectInterval = milliseconds;
     }
 
-    public void setBackupOps(boolean value) {
-        isBackupAct = value;
+    public void setBackupOps(boolean enable) {
+        isBackupAct = enable;
     }
 
     private void send(final JSONObject json) {
@@ -453,8 +453,8 @@ public class Xserv extends XservBase {
         }
     }
 
-    public void historyById(String topic, String event, Integer value) {
-        historyById(topic, event, value, 0);
+    public void historyById(String topic, String event, Integer offset) {
+        historyById(topic, event, offset, 0);
     }
 
     public void historyById(String topic, String event, Integer offset, Integer limit) {
@@ -473,8 +473,8 @@ public class Xserv extends XservBase {
         addOp(data);
     }
 
-    public void historyByTimestamp(String topic, String event, Integer value) {
-        historyByTimestamp(topic, event, value, 0);
+    public void historyByTimestamp(String topic, String event, Integer offset) {
+        historyByTimestamp(topic, event, offset, 0);
     }
 
     public void historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
