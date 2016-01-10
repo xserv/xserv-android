@@ -44,7 +44,7 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String ADDRESS = "localhost";
+    private final static String ADDRESS = "192.168.1.131";
     // private final static String ADDRESS = "mobile-italia.com";
     private final static String PORT = "5555";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
@@ -74,6 +74,7 @@ public class Xserv extends XservBase {
 
         isAutoReconnect = false;
         isConnected = false;
+        isBackupAct = true;
         inInitialization = false;
     }
 
@@ -86,7 +87,13 @@ public class Xserv extends XservBase {
     }
 
     public void connect() {
-        isAutoReconnect = true;
+        connect(false);
+    }
+
+    public void connect(boolean auto) {
+        if (!auto) {
+            isAutoReconnect = true;
+        }
 
         if (!isConnected() && !inInitialization) {
             inInitialization = true;
@@ -211,7 +218,7 @@ public class Xserv extends XservBase {
 
             @Override
             public void run() {
-                connect();
+                connect(true);
             }
         }, mReconnectInterval);
     }
@@ -267,7 +274,8 @@ public class Xserv extends XservBase {
                     } catch (JSONException ignored) {
                     }
 
-                    final SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+                    final SimpleHttpRequest request =
+                            new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
                     request.setContentType("application/json; charset=UTF-8");
                     request.setParam("topic", topic);
                     request.setParam("user", auth_user);
@@ -281,7 +289,6 @@ public class Xserv extends XservBase {
                         public void onResponse(String output) {
                             JSONObject new_json = new JSONObject();
                             try {
-                                new_json.put("app_id", json.get("app_id"));
                                 new_json.put("op", json.get("op"));
                                 new_json.put("topic", json.get("topic"));
                                 new_json.put("event", json.get("event"));
@@ -327,8 +334,7 @@ public class Xserv extends XservBase {
         int op = 0;
         try {
             op = json.getInt("op");
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (JSONException ignored) {
         }
 
         // salva tutte op da ripetere su riconnessione
@@ -410,7 +416,9 @@ public class Xserv extends XservBase {
                     data.put("op", BIND);
                     data.put("topic", t);
                     data.put("event", e);
-                    data.put("auth_endpoint", auth_endpoint);
+                    if (auth_endpoint != null) {
+                        data.put("auth_endpoint", auth_endpoint);
+                    }
                 } catch (JSONException e1) {
                     e1.printStackTrace();
                 }

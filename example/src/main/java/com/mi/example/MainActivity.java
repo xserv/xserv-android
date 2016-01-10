@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         });
 
         xserv = new Xserv("qLxFC-1");
-        // xserv.setDebug(true);
 
         xserv.setOnEventListener(this);
 
