@@ -24,5 +24,4 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
     compile project(path: ':xserv-android')
-    // compile 'com.mi.xserv:xserv-android:1.0.5'
 }

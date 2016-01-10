@@ -50,7 +50,6 @@ public class Xserv extends XservBase {
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
     private final static int DEFAULT_RI = 5000;
-    private final static String OP_SEP = ":";
 
     // attributes
     private final String mAppId;
@@ -90,8 +89,8 @@ public class Xserv extends XservBase {
         connect(false);
     }
 
-    public void connect(boolean auto) {
-        if (!auto) {
+    public void connect(boolean no_ar) {
+        if (!no_ar) {
             isAutoReconnect = true;
         }
 
@@ -168,10 +167,7 @@ public class Xserv extends XservBase {
 
                     if (message != null) {
                         try {
-                            Object j = new JSONTokener(message).nextValue();
-                            if (j instanceof JSONObject) {
-                                json.put("message", new JSONObject(message));
-                            }
+                            json.put("message", new JSONObject(message));
                         } catch (JSONException ignored) {
                         }
 
@@ -206,7 +202,7 @@ public class Xserv extends XservBase {
                         } catch (JSONException | UnsupportedEncodingException ignored) {
                         }
 
-                        onOps(json);
+                        onOpsResponse(json);
                     }
                 }
             }
@@ -287,23 +283,27 @@ public class Xserv extends XservBase {
 
                         @Override
                         public void onResponse(String output) {
-                            JSONObject new_json = new JSONObject();
+                            JSONObject new_json = null;
                             try {
-                                new_json.put("op", json.get("op"));
-                                new_json.put("topic", json.get("topic"));
-                                new_json.put("event", json.get("event"));
+                                new_json = new JSONObject(json.toString()); // clone
+                                new_json.remove("auth_endpoint");
                             } catch (JSONException ignored) {
                             }
 
-                            try {
-                                JSONObject data_sign = new JSONObject(output);
-                                new_json.put("arg1", request.getParam("user"));
-                                new_json.put("arg2", data_sign.getString("data"));
-                                new_json.put("arg3", data_sign.getString("sign"));
-                            } catch (JSONException ignored) {
-                            }
+                            if (new_json != null) {
+                                try {
+                                    JSONObject data_sign = new JSONObject(output);
+                                    new_json.put("arg1", request.getParam("user"));
+                                    new_json.put("arg2", data_sign.getString("data"));
+                                    new_json.put("arg3", data_sign.getString("sign"));
+                                } catch (JSONException ignored) {
+                                }
 
-                            wsSend(new_json);
+                                wsSend(new_json);
+                            } else {
+                                // like fail
+                                wsSend(json);
+                            }
                         }
 
                         @Override
