@@ -16,10 +16,12 @@ import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
+    // events:op op
     public final static int TRIGGER = 200;
     public final static int BIND = 201;
     public final static int UNBIND = 202;
@@ -43,15 +45,16 @@ public class Xserv extends XservBase {
 
     private final static String TAG = "Xserv";
     private final static String ADDRESS = "localhost";
-    private final static String PORT = ":4321";
-    private final static String URL = "ws://" + ADDRESS + PORT + "/ws";
-    private final static String DEFAULT_AUTH_URL = "http://" + ADDRESS + PORT + "/auth_user/";
+    // private final static String ADDRESS = "mobile-italia.com";
+    private final static String PORT = "5555";
+    private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
+    private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
     private final static int DEFAULT_RI = 5000;
     private final static String OP_SEP = ":";
 
     // attributes
-    final private String mAppId;
-    final private ArrayList<JSONObject> mOps;
+    private final String mAppId;
+    private final ArrayList<JSONObject> mOps;
     private Future<WebSocket> mConn;
     private int mReconnectInterval;
     private boolean isAutoReconnect;
@@ -89,31 +92,32 @@ public class Xserv extends XservBase {
             inInitialization = true;
 
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-            mConn = as.websocket(URL, null, new AsyncHttpClient.WebSocketConnectCallback() {
+            mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId), null,
+                    new AsyncHttpClient.WebSocketConnectCallback() {
 
-                @Override
-                public void onCompleted(final Exception e, final WebSocket ws) {
-                    if (e == null) {
-                        setOtherWsCallback(ws);
-                        isConnected = true;
+                        @Override
+                        public void onCompleted(Exception e, WebSocket ws) {
+                            if (e == null) {
+                                setOtherWsCallback(ws);
+                                isConnected = true;
 
-                        for (JSONObject op : mOps) {
-                            send(op);
+                                for (JSONObject op : mOps) {
+                                    send(op);
+                                }
+
+                                inInitialization = false;
+                                onOpen();
+                            } else {
+                                // eccezione, error socket
+                                if (isAutoReconnect) {
+                                    setTimeout();
+                                }
+
+                                inInitialization = false;
+                                onError(e);
+                            }
                         }
-
-                        inInitialization = false;
-                        onOpen();
-                    } else {
-                        // eccezione, error socket
-                        if (isAutoReconnect) {
-                            setTimeout();
-                        }
-
-                        inInitialization = false;
-                        onError(e);
-                    }
-                }
-            });
+                    });
         }
     }
 
@@ -136,66 +140,63 @@ public class Xserv extends XservBase {
         ws.setStringCallback(new WebSocket.StringCallback() {
 
             @Override
-            public void onStringAvailable(final String event) {
-                if (!event.startsWith(OP_SEP)) {
-                    JSONObject json = null;
+            public void onStringAvailable(String event) {
+                JSONObject json = null;
+                try {
+                    json = new JSONObject(event);
+                } catch (JSONException ignored) {
+                }
+
+                if (json != null) {
+                    int op = 0;
+                    String message = null;
                     try {
-                        json = new JSONObject(event);
+                        op = json.getInt("op");
+                    } catch (JSONException ignored) {
+                    }
+                    try {
+                        message = json.getString("message");
+                    } catch (JSONException ignored) {
+                    }
+
+                    if (message != null) {
                         try {
-                            String message = json.getString("message");
                             Object j = new JSONTokener(message).nextValue();
                             if (j instanceof JSONObject) {
                                 json.put("message", new JSONObject(message));
                             }
                         } catch (JSONException ignored) {
                         }
-                    } catch (JSONException ignored) {
-                    }
 
-                    onEvents(json);
-                } else {
-                    String[] arr = event.split(OP_SEP, -1);
-                    if (arr.length >= 7) {
-                        // data structure json array o object
-                        Object data_json = JSONObject.NULL;
-                        String data = arr[5];
-                        if (data != null) {
-                            byte[] b = Base64.decode(data, Base64.DEFAULT);
-                            if (b.length > 0) {
-                                try {
-                                    String raw = new String(b, "UTF-8");
-                                    Object j = new JSONTokener(raw).nextValue();
-                                    if (j instanceof JSONObject) {
-                                        data_json = new JSONObject(raw);
-                                    } else if (j instanceof JSONArray) {
-                                        data_json = new JSONArray(raw);
-                                    }
-                                } catch (JSONException | UnsupportedEncodingException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-                        }
-
-                        JSONObject json = new JSONObject();
-                        int rc = Integer.parseInt(arr[1]);
-                        int op = Integer.parseInt(arr[2]);
-                        String topic = arr[3];
+                        onEvents(json);
+                    } else if (op > 0) {
+                        int rc = 0;
+                        String topic = "";
                         try {
-                            json.put("rc", rc);
-                            json.put("op", op);
+                            rc = json.getInt("rc");
+                            topic = json.getString("topic");
+
                             json.put("name", stringifyOp(op));
-                            json.put("topic", topic);
-                            json.put("event", arr[4]);
-                            json.put("data", data_json);
-                            json.put("descr", arr[6]);
-                        } catch (JSONException ignore) {
+                        } catch (JSONException ignored) {
                         }
 
-                        // bind privata ok
-                        if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
-                            if (data_json instanceof JSONObject) {
-                                setUserData((JSONObject) data_json);
+                        try {
+                            String data = json.getString("data");
+                            byte[] b = Base64.decode(data, Base64.DEFAULT);
+                            String raw = new String(b, "UTF-8");
+                            Object j = new JSONTokener(raw).nextValue();
+                            if (j instanceof JSONObject) {
+                                JSONObject data_json = new JSONObject(raw);
+                                json.put("data", data_json);
+
+                                // bind privata ok
+                                if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
+                                    setUserData(data_json);
+                                }
+                            } else if (j instanceof JSONArray) {
+                                json.put("data", new JSONArray(raw));
                             }
+                        } catch (JSONException | UnsupportedEncodingException ignored) {
                         }
 
                         onOps(json);
@@ -253,7 +254,7 @@ public class Xserv extends XservBase {
                 }
 
                 if (auth_endpoint != null) {
-                    String auth_url = DEFAULT_AUTH_URL + mAppId;
+                    String auth_url = String.format(DEFAULT_AUTH_URL, ADDRESS, PORT, mAppId);
                     String auth_user = "";
                     String auth_pass = "";
                     try {
@@ -314,7 +315,7 @@ public class Xserv extends XservBase {
         }
     }
 
-    private void wsSend(final JSONObject json) {
+    private void wsSend(JSONObject json) {
         try {
             mConn.get().send(json.toString());
         } catch (InterruptedException | ExecutionException e) {
@@ -373,7 +374,7 @@ public class Xserv extends XservBase {
     public void trigger(String topic, String event, String message) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", mAppId);
+            data.put("uuid", UUID.randomUUID().toString());
             data.put("op", TRIGGER);
             data.put("topic", topic);
             data.put("event", event);
@@ -405,7 +406,7 @@ public class Xserv extends XservBase {
             for (String e : events) {
                 JSONObject data = new JSONObject();
                 try {
-                    data.put("app_id", mAppId);
+                    data.put("uuid", UUID.randomUUID().toString());
                     data.put("op", BIND);
                     data.put("topic", t);
                     data.put("event", e);
@@ -441,7 +442,7 @@ public class Xserv extends XservBase {
             for (String e : events) {
                 JSONObject data = new JSONObject();
                 try {
-                    data.put("app_id", mAppId);
+                    data.put("uuid", UUID.randomUUID().toString());
                     data.put("op", UNBIND);
                     data.put("topic", t);
                     data.put("event", e);
@@ -460,7 +461,7 @@ public class Xserv extends XservBase {
     public void historyById(String topic, String event, Integer offset, Integer limit) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", mAppId);
+            data.put("uuid", UUID.randomUUID().toString());
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -480,7 +481,7 @@ public class Xserv extends XservBase {
     public void historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", mAppId);
+            data.put("uuid", UUID.randomUUID().toString());
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -496,7 +497,7 @@ public class Xserv extends XservBase {
     public void presence(String topic, String event) {
         JSONObject data = new JSONObject();
         try {
-            data.put("app_id", mAppId);
+            data.put("uuid", UUID.randomUUID().toString());
             data.put("op", PRESENCE);
             data.put("topic", topic);
             data.put("event", event);
