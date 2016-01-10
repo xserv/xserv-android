@@ -373,14 +373,15 @@ public class Xserv extends XservBase {
         return "";
     }
 
-    public void trigger(String topic, String event, JSONObject message) {
-        trigger(topic, event, message.toString());
+    public String trigger(String topic, String event, JSONObject message) {
+        return trigger(topic, event, message.toString());
     }
 
-    public void trigger(String topic, String event, String message) {
+    public String trigger(String topic, String event, String message) {
+        String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
-            data.put("uuid", UUID.randomUUID().toString());
+            data.put("uuid", uuid);
             data.put("op", TRIGGER);
             data.put("topic", topic);
             data.put("event", event);
@@ -389,87 +390,59 @@ public class Xserv extends XservBase {
             e.printStackTrace();
         }
         addOp(data);
+        return uuid;
     }
 
-    public void bind(String topic, String event) {
-        bind(topic, event, null);
+    public String bind(String topic, String event) {
+        return bind(topic, event, null);
     }
 
-    public void bind(String topic, String event, JSONObject auth_endpoint) {
-        ArrayList<String> topics = new ArrayList<>();
-        topics.add(topic);
-        ArrayList<String> events = new ArrayList<>();
-        events.add(event);
-        bind(topics, events, auth_endpoint);
-    }
-
-    public void bind(ArrayList<String> topics, ArrayList<String> events) {
-        bind(topics, events, null);
-    }
-
-    public void bind(ArrayList<String> topics, ArrayList<String> events, JSONObject auth_endpoint) {
-        for (String t : topics) {
-            for (String e : events) {
-                JSONObject data = new JSONObject();
-                try {
-                    data.put("uuid", UUID.randomUUID().toString());
-                    data.put("op", BIND);
-                    data.put("topic", t);
-                    data.put("event", e);
-                    if (auth_endpoint != null) {
-                        data.put("auth_endpoint", auth_endpoint);
-                    }
-                } catch (JSONException e1) {
-                    e1.printStackTrace();
-                }
-                addOp(data);
-            }
-        }
-    }
-
-    public void unbind(String topic) {
-        unbind(topic, "");
-    }
-
-    public void unbind(String topic, String event) {
-        ArrayList<String> topics = new ArrayList<>();
-        topics.add(topic);
-        ArrayList<String> events = new ArrayList<>();
-        events.add(event);
-        unbind(topics, events);
-    }
-
-    public void unbind(ArrayList<String> topics) {
-        ArrayList<String> events = new ArrayList<>();
-        events.add("");
-        unbind(topics, events);
-    }
-
-    public void unbind(ArrayList<String> topics, ArrayList<String> events) {
-        for (String t : topics) {
-            for (String e : events) {
-                JSONObject data = new JSONObject();
-                try {
-                    data.put("uuid", UUID.randomUUID().toString());
-                    data.put("op", UNBIND);
-                    data.put("topic", t);
-                    data.put("event", e);
-                } catch (JSONException e1) {
-                    e1.printStackTrace();
-                }
-                addOp(data);
-            }
-        }
-    }
-
-    public void historyById(String topic, String event, Integer offset) {
-        historyById(topic, event, offset, 0);
-    }
-
-    public void historyById(String topic, String event, Integer offset, Integer limit) {
+    public String bind(String topic, String event, JSONObject auth_endpoint) {
+        String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
-            data.put("uuid", UUID.randomUUID().toString());
+            data.put("uuid", uuid);
+            data.put("op", BIND);
+            data.put("topic", topic);
+            data.put("event", event);
+            if (auth_endpoint != null) {
+                data.put("auth_endpoint", auth_endpoint);
+            }
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        }
+        addOp(data);
+        return uuid;
+    }
+
+    public String unbind(String topic) {
+        return unbind(topic, "");
+    }
+
+    public String unbind(String topic, String event) {
+        String uuid = UUID.randomUUID().toString();
+        JSONObject data = new JSONObject();
+        try {
+            data.put("uuid", uuid);
+            data.put("op", UNBIND);
+            data.put("topic", topic);
+            data.put("event", event);
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        }
+        addOp(data);
+        return uuid;
+    }
+
+    public String historyById(String topic, String event, Integer offset) {
+        return historyById(topic, event, offset, 0);
+    }
+
+    public String historyById(String topic, String event, Integer offset, Integer limit) {
+        String uuid = UUID.randomUUID().toString();
+        JSONObject data = new JSONObject();
+        try {
+            data.put("uuid", uuid);
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -480,16 +453,18 @@ public class Xserv extends XservBase {
             e.printStackTrace();
         }
         addOp(data);
+        return uuid;
     }
 
-    public void historyByTimestamp(String topic, String event, Integer offset) {
-        historyByTimestamp(topic, event, offset, 0);
+    public String historyByTimestamp(String topic, String event, Integer offset) {
+        return historyByTimestamp(topic, event, offset, 0);
     }
 
-    public void historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
+    public String historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
+        String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
-            data.put("uuid", UUID.randomUUID().toString());
+            data.put("uuid", uuid);
             data.put("op", HISTORY);
             data.put("topic", topic);
             data.put("event", event);
@@ -500,12 +475,14 @@ public class Xserv extends XservBase {
             e.printStackTrace();
         }
         addOp(data);
+        return uuid;
     }
 
-    public void presence(String topic, String event) {
+    public String presence(String topic, String event) {
+        String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
-            data.put("uuid", UUID.randomUUID().toString());
+            data.put("uuid", uuid);
             data.put("op", PRESENCE);
             data.put("topic", topic);
             data.put("event", event);
@@ -513,6 +490,7 @@ public class Xserv extends XservBase {
             e.printStackTrace();
         }
         addOp(data);
+        return uuid;
     }
 
 }
