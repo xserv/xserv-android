@@ -44,9 +44,9 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String ADDRESS = "192.168.1.131";
-    // private final static String ADDRESS = "mobile-italia.com";
-    private final static String PORT = "5555";
+    // private final static String ADDRESS = "192.168.1.131";
+    private final static String ADDRESS = "mobile-italia.com";
+    private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
     private final static int DEFAULT_RI = 5000;
