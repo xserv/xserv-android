@@ -121,22 +121,22 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnOpen() {
+    public void OnOpenConnection() {
         Log.d(TAG, "Connected");
     }
 
     @Override
-    public void OnClose(Exception e) {
+    public void OnCloseConnection(Exception e) {
         Log.d(TAG, "Disconnected");
     }
 
     @Override
-    public void OnError(Exception e) {
+    public void OnErrorConnection(Exception e) {
 
     }
 
     @Override
-    public void OnEvents(final JSONObject json) {
+    public void OnReceiveEvents(final JSONObject json) {
         //Log.d(TAG, "EVENT " + json.toString());
 
         mDataSource.add(0, json);
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnOpsResponse(JSONObject json) {
+    public void OnReceiveOpsResponse(JSONObject json) {
         Log.d(TAG, "OP " + json.toString());
     }
 

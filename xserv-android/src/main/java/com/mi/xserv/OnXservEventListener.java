@@ -4,13 +4,13 @@ import org.json.JSONObject;
 
 public interface OnXservEventListener {
 
-    void OnOpen();
+    void OnOpenConnection();
 
-    void OnClose(Exception e);
+    void OnCloseConnection(Exception e);
 
-    void OnError(Exception e);
+    void OnErrorConnection(Exception e);
 
-    void OnEvents(JSONObject json);
+    void OnReceiveEvents(JSONObject json);
 
-    void OnOpsResponse(JSONObject json);
+    void OnReceiveOpsResponse(JSONObject json);
 }

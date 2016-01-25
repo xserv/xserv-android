@@ -112,7 +112,7 @@ public class Xserv extends XservBase {
                                 }
 
                                 inInitialization = false;
-                                onOpen();
+                                onOpenConnection();
                             } else {
                                 // eccezione, error socket
                                 if (isAutoReconnect) {
@@ -120,7 +120,7 @@ public class Xserv extends XservBase {
                                 }
 
                                 inInitialization = false;
-                                onError(e);
+                                onErrorConnection(e);
                             }
                         }
                     });
@@ -139,7 +139,7 @@ public class Xserv extends XservBase {
                 }
 
                 inInitialization = false;
-                onClose(e);
+                onCloseConnection(e);
             }
         });
 
@@ -171,7 +171,7 @@ public class Xserv extends XservBase {
                         } catch (JSONException ignored) {
                         }
 
-                        onEvents(json);
+                        onReceiveEvents(json);
                     } else if (op > 0) {
                         int rc = 0;
                         String topic = "";
@@ -202,7 +202,7 @@ public class Xserv extends XservBase {
                         } catch (JSONException | UnsupportedEncodingException ignored) {
                         }
 
-                        onOpsResponse(json);
+                        onReceiveOpsResponse(json);
                     }
                 }
             }

@@ -17,61 +17,61 @@ public class XservBase {
         mListeners = onEventListener;
     }
 
-    protected void onOpen() {
+    protected void onOpenConnection() {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnOpen();
+                    mListeners.OnOpenConnection();
                 }
             });
         }
     }
 
-    protected void onClose(final Exception e) {
+    protected void onCloseConnection(final Exception e) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnClose(e);
+                    mListeners.OnCloseConnection(e);
                 }
             });
         }
     }
 
-    protected void onError(final Exception e) {
+    protected void onErrorConnection(final Exception e) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnError(e);
+                    mListeners.OnErrorConnection(e);
                 }
             });
         }
     }
 
-    protected void onEvents(final JSONObject json) {
+    protected void onReceiveEvents(final JSONObject json) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnEvents(json);
+                    mListeners.OnReceiveEvents(json);
                 }
             });
         }
     }
 
-    protected void onOpsResponse(final JSONObject json) {
+    protected void onReceiveOpsResponse(final JSONObject json) {
         if (mListeners != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnOpsResponse(json);
+                    mListeners.OnReceiveOpsResponse(json);
                 }
             });
         }
