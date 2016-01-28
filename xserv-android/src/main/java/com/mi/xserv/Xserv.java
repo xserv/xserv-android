@@ -120,11 +120,11 @@ public class Xserv extends XservBase {
             JSONObject stat = new JSONObject();
             try {
                 String model = Build.MODEL;
-                if (model.length() > 20) {
-                    model = model.substring(0, 20);
+                if (model.length() > 45) {
+                    model = model.substring(0, 45);
                 }
 
-                stat.put("uuid", mDeviceID);
+                stat.put("uuid", getDeviceID());
                 stat.put("model", model);
                 stat.put("os", "Android " + Build.VERSION.RELEASE);
                 stat.put("tz_offset", getTimeZoneOffset());

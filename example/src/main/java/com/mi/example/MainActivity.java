@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mXserv.historyById("@milano", "all", 0);
+                mXserv.historyById("@milano", "paletta", 0);
             }
         });
 
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mXserv.trigger("@milano", "all", "test messaggio android privato");
+                mXserv.trigger("@milano", "paletta", "test messaggio android privato");
             }
         });
 
@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             // e.printStackTrace();
         }
 
-        mXserv.bind("@milano", "all", auth_endpoint);
+        mXserv.bind("@milano", "paletta", auth_endpoint);
     }
 
     @Override

@@ -10,28 +10,34 @@ import org.json.JSONObject;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class XservBase {
     final protected Handler mHandler = new Handler(Looper.getMainLooper());
     protected OnXservEventListener mDelegate;
-    protected String mDeviceID;
 
     public XservBase() {
         mDelegate = null;
-        mDeviceID = "";
     }
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
         mDelegate = onEventListener;
+    }
 
+    protected String getDeviceID() {
+        String deviceID = null;
         if (mDelegate != null) {
             try {
-                mDeviceID = Settings.Secure.getString(((Context) mDelegate).getContentResolver(),
+                deviceID = Settings.Secure.getString(((Context) mDelegate).getContentResolver(),
                         Settings.Secure.ANDROID_ID);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+        if (deviceID == null) {
+            deviceID = UUID.randomUUID().toString();
+        }
+        return deviceID;
     }
 
     protected int getTimeZoneOffset() {
