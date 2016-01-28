@@ -1,5 +1,6 @@
 package com.mi.xserv;
 
+import android.os.Build;
 import android.util.Base64;
 
 import com.koushikdutta.async.callback.CompletedCallback;
@@ -95,6 +96,8 @@ public class Xserv extends XservBase {
                         @Override
                         public void onCompleted(Exception e, WebSocket ws) {
                             if (e == null) {
+                                sendStat();
+
                                 setOtherWsCallback(ws);
                                 isConnected = true;
 
@@ -109,6 +112,22 @@ public class Xserv extends XservBase {
                             }
                         }
                     });
+        }
+    }
+
+    private void sendStat() {
+        if (mDelegate != null) {
+            JSONObject stat = new JSONObject();
+            try {
+                stat.put("uuid", mDeviceID);
+                stat.put("model", "Android " + Build.MODEL.substring(0, 20));
+                stat.put("os", Build.VERSION.RELEASE);
+                stat.put("tz_offset", getTimeZoneOffset());
+                stat.put("tz_dst", getTimeZoneDst());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            wsSend(stat);
         }
     }
 

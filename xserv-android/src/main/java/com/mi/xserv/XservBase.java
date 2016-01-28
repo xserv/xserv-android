@@ -1,77 +1,111 @@
 package com.mi.xserv;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 
 import org.json.JSONObject;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+
 public class XservBase {
     final protected Handler mHandler = new Handler(Looper.getMainLooper());
-    private OnXservEventListener mListeners;
+    protected OnXservEventListener mDelegate;
+    protected String mDeviceID;
 
     public XservBase() {
-        mListeners = null;
+        mDelegate = null;
+        mDeviceID = "";
     }
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
-        mListeners = onEventListener;
+        mDelegate = onEventListener;
+
+        if (mDelegate != null) {
+            try {
+                mDeviceID = Settings.Secure.getString(((Context) mDelegate).getContentResolver(),
+                        Settings.Secure.ANDROID_ID);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    protected int getTimeZoneOffset() {
+        // GMT es. italia +1
+        TimeZone timezone = TimeZone.getDefault();
+        int seconds = timezone.getOffset(Calendar.ZONE_OFFSET) / 1000;
+        double minutes = seconds / 60;
+        double hours = minutes / 60;
+        return (int) hours;
+    }
+
+    protected int getTimeZoneDst() {
+        // Daylight savings
+        Date today = new Date();
+        TimeZone timezone = TimeZone.getDefault();
+        boolean isDST = timezone.inDaylightTime(today);
+        return isDST ? 1 : 0;
     }
 
     protected void onOpenConnection() {
-        if (mListeners != null) {
+        if (mDelegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnOpenConnection();
+                    mDelegate.OnOpenConnection();
                 }
             });
         }
     }
 
     protected void onCloseConnection(final Exception e) {
-        if (mListeners != null) {
+        if (mDelegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnCloseConnection(e);
+                    mDelegate.OnCloseConnection(e);
                 }
             });
         }
     }
 
     protected void onErrorConnection(final Exception e) {
-        if (mListeners != null) {
+        if (mDelegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnErrorConnection(e);
+                    mDelegate.OnErrorConnection(e);
                 }
             });
         }
     }
 
     protected void onReceiveEvents(final JSONObject json) {
-        if (mListeners != null) {
+        if (mDelegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnReceiveEvents(json);
+                    mDelegate.OnReceiveEvents(json);
                 }
             });
         }
     }
 
     protected void onReceiveOpsResponse(final JSONObject json) {
-        if (mListeners != null) {
+        if (mDelegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mListeners.OnReceiveOpsResponse(json);
+                    mDelegate.OnReceiveOpsResponse(json);
                 }
             });
         }
