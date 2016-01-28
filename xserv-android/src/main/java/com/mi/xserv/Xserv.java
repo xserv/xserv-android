@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -44,8 +43,8 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    // private final static String ADDRESS = "192.168.1.131";
-    private final static String ADDRESS = "mobile-italia.com";
+    private final static String ADDRESS = "192.168.130.153";
+    // private final static String ADDRESS = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
@@ -53,28 +52,22 @@ public class Xserv extends XservBase {
 
     // attributes
     private final String mAppId;
-    private final ArrayList<JSONObject> mOps;
     private Future<WebSocket> mConn;
     private int mReconnectInterval;
     private boolean isAutoReconnect;
     private JSONObject mUserData;
     private boolean isConnected;
-    private boolean isBackupAct;
-    private boolean inInitialization;
 
     public Xserv(String app_id) {
         super();
 
         mAppId = app_id;
         mConn = null;
-        mOps = new ArrayList<>();
         mUserData = new JSONObject();
         mReconnectInterval = DEFAULT_RI;
 
         isAutoReconnect = false;
         isConnected = false;
-        isBackupAct = true;
-        inInitialization = false;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -94,9 +87,7 @@ public class Xserv extends XservBase {
             isAutoReconnect = true;
         }
 
-        if (!isConnected() && !inInitialization) {
-            inInitialization = true;
-
+        if (!isConnected()) {
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
@@ -107,11 +98,6 @@ public class Xserv extends XservBase {
                                 setOtherWsCallback(ws);
                                 isConnected = true;
 
-                                for (JSONObject op : mOps) {
-                                    send(op);
-                                }
-
-                                inInitialization = false;
                                 onOpenConnection();
                             } else {
                                 // eccezione, error socket
@@ -119,7 +105,6 @@ public class Xserv extends XservBase {
                                     setTimeout();
                                 }
 
-                                inInitialization = false;
                                 onErrorConnection(e);
                             }
                         }
@@ -138,7 +123,6 @@ public class Xserv extends XservBase {
                     setTimeout();
                 }
 
-                inInitialization = false;
                 onCloseConnection(e);
             }
         });
@@ -235,90 +219,86 @@ public class Xserv extends XservBase {
         mReconnectInterval = milliseconds;
     }
 
-    public void setBackupOps(boolean enable) {
-        isBackupAct = enable;
-    }
-
     private void send(final JSONObject json) {
-        if (isConnected()) {
-            int op = 0;
-            String topic = "";
+        if (!isConnected()) return;
+
+        int op = 0;
+        String topic = "";
+        try {
+            op = json.getInt("op");
+            topic = json.getString("topic");
+        } catch (JSONException ignored) {
+        }
+
+        if (op == BIND && isPrivateTopic(topic)) {
+            JSONObject auth_endpoint = null;
             try {
-                op = json.getInt("op");
-                topic = json.getString("topic");
+                auth_endpoint = json.getJSONObject("auth_endpoint");
             } catch (JSONException ignored) {
             }
 
-            if (op == BIND && isPrivateTopic(topic)) {
-                JSONObject auth_endpoint = null;
+            if (auth_endpoint != null) {
+                String auth_url = String.format(DEFAULT_AUTH_URL, ADDRESS, PORT, mAppId);
+                String auth_user = "";
+                String auth_pass = "";
                 try {
-                    auth_endpoint = json.getJSONObject("auth_endpoint");
+                    auth_url = auth_endpoint.getString("endpoint");
+                } catch (JSONException ignored) {
+                }
+                try {
+                    auth_user = auth_endpoint.getString("user");
+                    auth_pass = auth_endpoint.getString("pass");
                 } catch (JSONException ignored) {
                 }
 
-                if (auth_endpoint != null) {
-                    String auth_url = String.format(DEFAULT_AUTH_URL, ADDRESS, PORT, mAppId);
-                    String auth_user = "";
-                    String auth_pass = "";
-                    try {
-                        auth_url = auth_endpoint.getString("endpoint");
-                    } catch (JSONException ignored) {
-                    }
-                    try {
-                        auth_user = auth_endpoint.getString("user");
-                        auth_pass = auth_endpoint.getString("pass");
-                    } catch (JSONException ignored) {
-                    }
+                final SimpleHttpRequest request =
+                        new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+                request.setContentType("application/json; charset=UTF-8");
+                request.setParam("topic", topic);
+                request.setParam("user", auth_user);
+                request.setParam("pass", auth_pass);
 
-                    final SimpleHttpRequest request =
-                            new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
-                    request.setContentType("application/json; charset=UTF-8");
-                    request.setParam("topic", topic);
-                    request.setParam("user", auth_user);
-                    request.setParam("pass", auth_pass);
+                SimpleHttpTask task = new SimpleHttpTask();
 
-                    SimpleHttpTask task = new SimpleHttpTask();
+                task.setOnResponseListener(new ITaskListener.OnResponseListener() {
 
-                    task.setOnResponseListener(new ITaskListener.OnResponseListener() {
+                    @Override
+                    public void onResponse(String output) {
+                        JSONObject new_json = null;
+                        try {
+                            new_json = new JSONObject(json.toString()); // clone
+                            new_json.remove("auth_endpoint");
+                        } catch (JSONException ignored) {
+                        }
 
-                        @Override
-                        public void onResponse(String output) {
-                            JSONObject new_json = null;
+                        if (new_json != null) {
                             try {
-                                new_json = new JSONObject(json.toString()); // clone
-                                new_json.remove("auth_endpoint");
+                                JSONObject data_sign = new JSONObject(output);
+                                new_json.put("arg1", request.getParam("user"));
+                                new_json.put("arg2", data_sign.getString("data"));
+                                new_json.put("arg3", data_sign.getString("sign"));
                             } catch (JSONException ignored) {
                             }
 
-                            if (new_json != null) {
-                                try {
-                                    JSONObject data_sign = new JSONObject(output);
-                                    new_json.put("arg1", request.getParam("user"));
-                                    new_json.put("arg2", data_sign.getString("data"));
-                                    new_json.put("arg3", data_sign.getString("sign"));
-                                } catch (JSONException ignored) {
-                                }
-
-                                wsSend(new_json);
-                            } else {
-                                // like fail
-                                wsSend(json);
-                            }
-                        }
-
-                        @Override
-                        public void onFail() {
+                            wsSend(new_json);
+                        } else {
+                            // like fail
                             wsSend(json);
                         }
-                    });
+                    }
 
-                    task.execute(request);
-                } else {
-                    wsSend(json);
-                }
+                    @Override
+                    public void onFail() {
+                        wsSend(json);
+                    }
+                });
+
+                task.execute(request);
             } else {
                 wsSend(json);
             }
+        } else {
+            wsSend(json);
         }
     }
 
@@ -328,21 +308,6 @@ public class Xserv extends XservBase {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-    }
-
-    private void addOp(JSONObject json) {
-        int op = 0;
-        try {
-            op = json.getInt("op");
-        } catch (JSONException ignored) {
-        }
-
-        // salva tutte op da ripetere su riconnessione
-        if (isBackupAct && (op == BIND || op == UNBIND)) {
-            mOps.add(json);
-        }
-
-        send(json);
     }
 
     public JSONObject getUserData() {
@@ -378,6 +343,8 @@ public class Xserv extends XservBase {
     }
 
     public String trigger(String topic, String event, String message) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -389,7 +356,7 @@ public class Xserv extends XservBase {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 
@@ -398,6 +365,8 @@ public class Xserv extends XservBase {
     }
 
     public String bind(String topic, String event, JSONObject auth_endpoint) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -411,7 +380,7 @@ public class Xserv extends XservBase {
         } catch (JSONException e1) {
             e1.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 
@@ -420,6 +389,8 @@ public class Xserv extends XservBase {
     }
 
     public String unbind(String topic, String event) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -430,7 +401,7 @@ public class Xserv extends XservBase {
         } catch (JSONException e1) {
             e1.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 
@@ -439,6 +410,8 @@ public class Xserv extends XservBase {
     }
 
     public String historyById(String topic, String event, Integer offset, Integer limit) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -452,7 +425,7 @@ public class Xserv extends XservBase {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 
@@ -461,6 +434,8 @@ public class Xserv extends XservBase {
     }
 
     public String historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -474,11 +449,13 @@ public class Xserv extends XservBase {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 
     public String presence(String topic, String event) {
+        if (!isConnected()) return "";
+
         String uuid = UUID.randomUUID().toString();
         JSONObject data = new JSONObject();
         try {
@@ -489,7 +466,7 @@ public class Xserv extends XservBase {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        addOp(data);
+        send(data);
         return uuid;
     }
 

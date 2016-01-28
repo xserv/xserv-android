@@ -22,7 +22,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements OnXservEventListener {
     private final static String TAG = "Example";
 
-    private Xserv xserv;
+    private Xserv mXserv;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
     private MyAdapter mAdapter;
@@ -77,8 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // xserv.disconnect();
-                xserv.historyById("milano", "all", 0);
+                mXserv.historyById("@milano", "all", 0);
             }
         });
 
@@ -86,43 +85,29 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // xserv.connect();
-                // xserv.bind("milano", "all");
-
-                xserv.trigger("milano", "all", "test messaggio android");
-                xserv.trigger("@milano", "all", "test messaggio android privato");
-
-                /*try {
-                    JSONObject json = new JSONObject();
-                    json.put("message", "Giovanni");
-                    xserv.trigger("milano", "all", json);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }*/
+                mXserv.trigger("@milano", "all", "test messaggio android privato");
             }
         });
 
-        xserv = new Xserv("qLxFC-1");
+        mXserv = new Xserv("9Pf80-3");
+        mXserv.setOnEventListener(this);
 
-        xserv.setOnEventListener(this);
-
-        JSONObject auth_endpoint = new JSONObject();
-        try {
-            auth_endpoint.put("user", "amatig");
-            auth_endpoint.put("pass", "pippo");
-        } catch (JSONException ignored) {
-            // e.printStackTrace();
-        }
-
-        xserv.bind("@milano", "all", auth_endpoint);
-        xserv.bind("milano", "all");
-
-        xserv.connect();
+        mXserv.connect();
     }
 
     @Override
     public void OnOpenConnection() {
         Log.d(TAG, "Connected");
+
+        JSONObject auth_endpoint = new JSONObject();
+        try {
+            auth_endpoint.put("user", "amatig");
+            auth_endpoint.put("pass", "amagio");
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
+        }
+
+        mXserv.bind("@milano", "all", auth_endpoint);
     }
 
     @Override
