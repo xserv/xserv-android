@@ -44,8 +44,8 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    private final static String ADDRESS = "192.168.130.153";
-    // private final static String ADDRESS = "mobile-italia.com";
+    // private final static String ADDRESS = "192.168.130.153";
+    private final static String ADDRESS = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
@@ -119,9 +119,14 @@ public class Xserv extends XservBase {
         if (mDelegate != null) {
             JSONObject stat = new JSONObject();
             try {
+                String model = Build.MODEL;
+                if (model.length() > 20) {
+                    model = model.substring(0, 20);
+                }
+
                 stat.put("uuid", mDeviceID);
-                stat.put("model", "Android " + Build.MODEL.substring(0, 20));
-                stat.put("os", Build.VERSION.RELEASE);
+                stat.put("model", model);
+                stat.put("os", "Android " + Build.VERSION.RELEASE);
                 stat.put("tz_offset", getTimeZoneOffset());
                 stat.put("tz_dst", getTimeZoneDst());
             } catch (JSONException e) {

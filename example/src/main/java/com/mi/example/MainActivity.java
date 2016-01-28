@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         JSONObject auth_endpoint = new JSONObject();
         try {
             auth_endpoint.put("user", "amatig");
-            auth_endpoint.put("pass", "amagio");
+            auth_endpoint.put("pass", "amatig");
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
