@@ -99,8 +99,6 @@ public class Xserv extends XservBase {
         }
 
         if (!isConnected()) {
-            // TODO free
-
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {

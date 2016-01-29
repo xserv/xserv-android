@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 mXserv.historyById("@milano", "paletta", 0);
+                // mXserv.disconnect();
+                // mXserv.connect();
             }
         });
 
