@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             @Override
             public void onClick(View view) {
                 mXserv.trigger("@milano", "paletta", "test messaggio android privato");
+                mXserv.trigger("milano", "all", "test messaggio android");
             }
         });
 
@@ -106,8 +107,9 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
-
         mXserv.bind("@milano", "paletta", auth_endpoint);
+
+        mXserv.bind("milano", "all");
     }
 
     @Override

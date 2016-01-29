@@ -1,11 +1,11 @@
 /***
- Xserv
-
- Copyright (C) 2015 Giovanni Amati
-
- This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+ * Xserv
+ * <p/>
+ * Copyright (C) 2015 Giovanni Amati
+ * <p/>
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
  ***/
 
 package com.mi.xserv;
@@ -54,8 +54,8 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
 
     private final static String TAG = "Xserv";
-    // private final static String ADDRESS = "192.168.130.153";
-    private final static String ADDRESS = "mobile-italia.com";
+    private final static String ADDRESS = "192.168.130.153";
+    // private final static String ADDRESS = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
@@ -93,12 +93,14 @@ public class Xserv extends XservBase {
         connect(false);
     }
 
-    public void connect(boolean no_ar) {
+    private void connect(boolean no_ar) {
         if (!no_ar) {
             isAutoReconnect = true;
         }
 
         if (!isConnected()) {
+            // TODO free
+
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
@@ -106,43 +108,23 @@ public class Xserv extends XservBase {
                         @Override
                         public void onCompleted(Exception e, WebSocket ws) {
                             if (e == null) {
+                                setOtherWsCallback(ws);
+
                                 sendStat();
 
-                                setOtherWsCallback(ws);
                                 isConnected = true;
 
                                 onOpenConnection();
                             } else {
+                                onErrorConnection(e);
+
                                 // eccezione, error socket
                                 if (isAutoReconnect) {
-                                    setTimeout();
+                                    reConnect();
                                 }
-
-                                onErrorConnection(e);
                             }
                         }
                     });
-        }
-    }
-
-    private void sendStat() {
-        if (mDelegate != null) {
-            JSONObject stat = new JSONObject();
-            try {
-                String model = Build.MODEL;
-                if (model.length() > 45) {
-                    model = model.substring(0, 45);
-                }
-
-                stat.put("uuid", getDeviceID());
-                stat.put("model", model);
-                stat.put("os", "Android " + Build.VERSION.RELEASE);
-                stat.put("tz_offset", getTimeZoneOffset());
-                stat.put("tz_dst", getTimeZoneDst());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            wsSend(stat);
         }
     }
 
@@ -153,11 +135,11 @@ public class Xserv extends XservBase {
             public void onCompleted(Exception e) {
                 isConnected = false;
 
-                if (isAutoReconnect) {
-                    setTimeout();
-                }
-
                 onCloseConnection(e);
+
+                if (isAutoReconnect) {
+                    reConnect();
+                }
             }
         });
 
@@ -227,7 +209,7 @@ public class Xserv extends XservBase {
         });
     }
 
-    private void setTimeout() {
+    private void reConnect() {
         mHandler.postDelayed(new Runnable() {
 
             @Override
@@ -249,8 +231,31 @@ public class Xserv extends XservBase {
         }
     }
 
+    public Integer getReconnectInterval() {
+        return mReconnectInterval;
+    }
+
     public void setReconnectInterval(Integer milliseconds) {
         mReconnectInterval = milliseconds;
+    }
+
+    private void sendStat() {
+        JSONObject stat = new JSONObject();
+        try {
+            String model = Build.MODEL;
+            if (model.length() > 45) {
+                model = model.substring(0, 45);
+            }
+
+            stat.put("uuid", getDeviceID());
+            stat.put("model", model);
+            stat.put("os", "Android " + Build.VERSION.RELEASE);
+            stat.put("tz_offset", getTimeZoneOffset());
+            stat.put("tz_dst", getTimeZoneDst());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        wsSend(stat);
     }
 
     private void send(final JSONObject json) {

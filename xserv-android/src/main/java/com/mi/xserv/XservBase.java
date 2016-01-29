@@ -1,11 +1,11 @@
 /***
- XservBase
-
- Copyright (C) 2015 Giovanni Amati
-
- This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+ * XservBase
+ * <p/>
+ * Copyright (C) 2015 Giovanni Amati
+ * <p/>
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
  ***/
 
 package com.mi.xserv;
@@ -17,28 +17,31 @@ import android.provider.Settings;
 
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
 public class XservBase {
-    final protected Handler mHandler = new Handler(Looper.getMainLooper());
-    protected OnXservEventListener mDelegate;
+    protected final Handler mHandler = new Handler(Looper.getMainLooper());
+    private WeakReference<OnXservEventListener> mDelegate;
 
     public XservBase() {
-        mDelegate = null;
+        mDelegate = new WeakReference<>(null);
     }
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
-        mDelegate = onEventListener;
+        mDelegate = new WeakReference<>(onEventListener);
     }
 
     protected String getDeviceID() {
+        OnXservEventListener delegate = mDelegate.get();
+
         String deviceID = null;
-        if (mDelegate != null) {
+        if (delegate != null) {
             try {
-                deviceID = Settings.Secure.getString(((Context) mDelegate).getContentResolver(),
+                deviceID = Settings.Secure.getString(((Context) delegate).getContentResolver(),
                         Settings.Secure.ANDROID_ID);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -47,6 +50,7 @@ public class XservBase {
         if (deviceID == null) {
             deviceID = UUID.randomUUID().toString();
         }
+
         return deviceID;
     }
 
@@ -68,60 +72,70 @@ public class XservBase {
     }
 
     protected void onOpenConnection() {
-        if (mDelegate != null) {
+        final OnXservEventListener delegate = mDelegate.get();
+
+        if (delegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mDelegate.OnOpenConnection();
+                    delegate.OnOpenConnection();
                 }
             });
         }
     }
 
     protected void onCloseConnection(final Exception e) {
-        if (mDelegate != null) {
+        final OnXservEventListener delegate = mDelegate.get();
+
+        if (delegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mDelegate.OnCloseConnection(e);
+                    delegate.OnCloseConnection(e);
                 }
             });
         }
     }
 
     protected void onErrorConnection(final Exception e) {
-        if (mDelegate != null) {
+        final OnXservEventListener delegate = mDelegate.get();
+
+        if (delegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mDelegate.OnErrorConnection(e);
+                    delegate.OnErrorConnection(e);
                 }
             });
         }
     }
 
     protected void onReceiveEvents(final JSONObject json) {
-        if (mDelegate != null) {
+        final OnXservEventListener delegate = mDelegate.get();
+
+        if (delegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mDelegate.OnReceiveEvents(json);
+                    delegate.OnReceiveEvents(json);
                 }
             });
         }
     }
 
     protected void onReceiveOpsResponse(final JSONObject json) {
-        if (mDelegate != null) {
+        final OnXservEventListener delegate = mDelegate.get();
+
+        if (delegate != null) {
             mHandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    mDelegate.OnReceiveOpsResponse(json);
+                    delegate.OnReceiveOpsResponse(json);
                 }
             });
         }
