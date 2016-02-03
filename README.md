@@ -16,7 +16,7 @@ This library is client that allows Android clients to connect to the [Xserv](htt
 
 ### Gradle
 
-Via the Xserv CDN:
+Add as a dependency to your build.gradle:
 
 ``` java
 dependencies {
