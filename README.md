@@ -1,5 +1,5 @@
 <p align="center" >
-  <img src="http://mobile-italia.com/xserv/assets/images/logo-big.png" alt="Xserv" title="Xserv">
+  <img src="http://mobile-italia.com/xserv/assets/images/logo-big.png?t=1" alt="Xserv" title="Xserv">
 </p>
 
 # Xserv Android Client
