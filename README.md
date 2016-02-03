@@ -9,7 +9,7 @@ This library is client that allows Android clients to connect to the [Xserv](htt
 
 ## How To Get Started
 
-- [Download Xserv](https://github.com/xserv/xserv-js/archive/master.zip) and try out the included Javascript example apps.
+- [Download Xserv](https://github.com/xserv/xserv-android/archive/master.zip) and try out the included Android example apps.
 - Read the ["Getting Started" guide](http://mobile-italia.com/xserv/docs#).
 
 ## Installation
