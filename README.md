@@ -16,7 +16,7 @@ This library is client that allows Android clients to connect to the [Xserv](htt
 
 ### Gradle
 
-To integrate Xserv into your Android Studio project using Gradle, specify it in your `build.gradle`:
+Add as a dependency to your build.gradle `build.gradle`:
 
 ```java
 dependencies {
