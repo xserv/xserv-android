@@ -14,7 +14,7 @@ This library is client that allows Android clients to connect to the [Xserv](htt
 
 ## Installation
 
-Add user permission to you `AndroidManifest.xml`:
+Add internet permission to you `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
