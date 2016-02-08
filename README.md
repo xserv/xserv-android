@@ -18,10 +18,9 @@ Add user permission to you `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
+```
 
 ### Gradle
-
-```
 
 Add as a dependency to your build.gradle `build.gradle`:
 
