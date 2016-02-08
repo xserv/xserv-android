@@ -14,12 +14,13 @@ This library is client that allows Android clients to connect to the [Xserv](htt
 
 ## Installation
 
-### Gradle
-
 Add user permission to you `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
+
+### Gradle
+
 ```
 
 Add as a dependency to your build.gradle `build.gradle`:
