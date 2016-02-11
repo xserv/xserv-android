@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -52,6 +53,11 @@ public class XservBase {
         }
 
         return deviceID;
+    }
+
+    protected String getLanguage() {
+        // it-IT
+        return Locale.getDefault().toString().replace("_", "-");
     }
 
     protected int getTimeZoneOffset() {

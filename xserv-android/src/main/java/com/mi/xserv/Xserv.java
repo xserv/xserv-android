@@ -250,6 +250,7 @@ public class Xserv extends XservBase {
             stat.put("os", "Android " + Build.VERSION.RELEASE);
             stat.put("tz_offset", getTimeZoneOffset());
             stat.put("tz_dst", getTimeZoneDst());
+            stat.put("lang", getLanguage());
         } catch (JSONException e) {
             e.printStackTrace();
         }
