@@ -69,6 +69,12 @@ public class Xserv extends XservBase {
     private JSONObject mUserData;
     private boolean isConnected;
 
+    /**
+     * Return an instance of Xserv connector.
+     *
+     * @param app_id identifier of your application. You can find it on Xserv Dashboard.
+     * @return instance of Xserv connector.
+     */
     public Xserv(String app_id) {
         super();
 
