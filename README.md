@@ -1,25 +1,32 @@
 <p align="center" >
-  <img src="http://mobile-italia.com/xserv/assets/images/apple-icon-114x114.png" alt="Xserv" title="Xserv">
+  <img src="http://mobile-italia.com/xserv/assets/images/logo-big.png?t=3" alt="Xserv" title="Xserv">
 </p>
 
-# Xserv Android Client
+<br>
 
 This library is client that allows Android clients to connect to the [Xserv](http://mobile-italia.com/xserv/) WebSocket API.<br>
 [Xserv](http://mobile-italia.com/xserv/) is a platform of real-time bi-directional messaging via WebSockets to web and mobile apps, or any other Internet connected device.
 
 ## How To Get Started
 
-- [Download Xserv](https://github.com/xserv/xserv-android/archive/master.zip) and try out the included Android example apps.
+- [Download xserv-android](https://github.com/xserv/xserv-android/archive/master.zip) and try out the included Android example apps.
 - Read the ["Getting Started" guide](http://mobile-italia.com/xserv/docs#).
 
 ## Installation
 
+Add internet permission to you `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
 ### Gradle
 
-Add as a dependency to your `build.gradle`:
+Add as a dependency to your build.gradle `build.gradle`:
 
 ```java
 dependencies {
+    ...
     compile 'com.mi.xserv:xserv-android:1.1.1'
 }
 ```
