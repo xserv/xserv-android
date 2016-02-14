@@ -35,8 +35,7 @@ dependencies {
 
 Xserv is owned and maintained by the [mobile-italia.com] (http://mobile-italia.com).
 
-xserv-android use an external websocket lib connection:
-
+This SDK use an external library:
 https://github.com/koush/AndroidAsync
 
 ### Security Disclosure
