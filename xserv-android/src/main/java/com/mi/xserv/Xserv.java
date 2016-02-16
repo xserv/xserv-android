@@ -31,31 +31,32 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
-    // events:op op
-    public final static int TRIGGER = 200;
-    public final static int BIND = 201;
-    public final static int UNBIND = 202;
-    public final static int HISTORY = 203;
-    public final static int PRESENCE = 204;
+    // op
+    public final static int OP_PUBLISH = 200;
+    public final static int OP_SUBSCRIBE = 201;
+    public final static int OP_UNSUBSCRIBE = 202;
+    public final static int OP_HISTORY = 203;
+    public final static int OP_PRESENCE = 204;
     // in uso in presence
-    public final static int PRESENCE_IN = BIND + 200;
-    public final static int PRESENCE_OUT = UNBIND + 200;
+    public final static int OP_JOIN = OP_SUBSCRIBE + 200;
+    public final static int OP_LEAVE = OP_UNSUBSCRIBE + 200;
     // in uso in history
     public final static String HISTORY_ID = "id";
     public final static String HISTORY_TIMESTAMP = "timestamp";
-    // events:op result_code
+    // op result_code
     public final static int RC_OK = 1;
     public final static int RC_GENERIC_ERROR = 0;
     public final static int RC_ARGS_ERROR = -1;
-    public final static int RC_ALREADY_BINDED = -2;
+    public final static int RC_ALREADY_SUBSCRIBED = -2;
     public final static int RC_UNAUTHORIZED = -3;
-    public final static int RC_NO_EVENT = -4;
+    public final static int RC_NO_TOPIC = -4;
     public final static int RC_NO_DATA = -5;
     public final static int RC_NOT_PRIVATE = -6;
+    public final static int RC_LIMIT_MESSAGES = -7;
 
     private final static String TAG = "Xserv";
-    // private final static String ADDRESS = "192.168.130.153";
-    private final static String ADDRESS = "xserv.mobile-italia.com";
+    private final static String ADDRESS = "192.168.130.153";
+    // private final static String ADDRESS = "xserv.mobile-italia.com";
     private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
@@ -159,23 +160,18 @@ public class Xserv extends XservBase {
 
                 if (json != null) {
                     int op = 0;
-                    String message = null;
                     try {
                         op = json.getInt("op");
                     } catch (JSONException ignored) {
                     }
-                    try {
-                        message = json.getString("message");
-                    } catch (JSONException ignored) {
-                    }
 
-                    if (message != null) {
+                    if (op == 0) {
                         try {
-                            json.put("message", new JSONObject(message));
+                            json.put("data", new JSONObject(json.getString("data")));
                         } catch (JSONException ignored) {
                         }
 
-                        onReceiveEvents(json);
+                        onReceiveMessages(json);
                     } else if (op > 0) {
                         int rc = 0;
                         String topic = "";
@@ -197,7 +193,7 @@ public class Xserv extends XservBase {
                                 json.put("data", data_json);
 
                                 // bind privata ok
-                                if (op == BIND && isPrivateTopic(topic) && rc == RC_OK) {
+                                if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
                                     setUserData(data_json);
                                 }
                             } else if (j instanceof JSONArray) {
@@ -274,7 +270,7 @@ public class Xserv extends XservBase {
         } catch (JSONException ignored) {
         }
 
-        if (op == BIND && isPrivateTopic(topic)) {
+        if (op == OP_SUBSCRIBE && isPrivateTopic(topic)) {
             JSONObject auth_endpoint = null;
             try {
                 auth_endpoint = json.getJSONObject("auth_endpoint");
@@ -364,153 +360,143 @@ public class Xserv extends XservBase {
 
     private String stringifyOp(int code) {
         switch (code) {
-            case BIND:
-                return "bind";
-            case UNBIND:
-                return "unbind";
-            case HISTORY:
+            case OP_SUBSCRIBE:
+                return "subscribe";
+            case OP_UNSUBSCRIBE:
+                return "unsubscribe";
+            case OP_HISTORY:
                 return "history";
-            case PRESENCE:
+            case OP_PRESENCE:
                 return "presence";
-            case PRESENCE_IN:
-                return "presence_in";
-            case PRESENCE_OUT:
-                return "presence_out";
-            case TRIGGER:
-                return "trigger";
+            case OP_JOIN:
+                return "join";
+            case OP_LEAVE:
+                return "leave";
+            case OP_PUBLISH:
+                return "publish";
         }
         return "";
     }
 
-    public String trigger(String topic, String event, JSONObject message) {
-        return trigger(topic, event, message.toString());
+    public String publish(String topic, JSONObject data) {
+        return publish(topic, data.toString());
     }
 
-    public String trigger(String topic, String event, String message) {
+    public String publish(String topic, String data) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", TRIGGER);
-            data.put("topic", topic);
-            data.put("event", event);
-            data.put("arg1", message);
+            json.put("uuid", uuid);
+            json.put("op", OP_PUBLISH);
+            json.put("topic", topic);
+            json.put("arg1", data);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 
-    public String bind(String topic, String event) {
-        return bind(topic, event, null);
+    public String subscribe(String topic) {
+        return subscribe(topic, null);
     }
 
-    public String bind(String topic, String event, JSONObject auth_endpoint) {
+    public String subscribe(String topic, JSONObject auth_endpoint) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", BIND);
-            data.put("topic", topic);
-            data.put("event", event);
+            json.put("uuid", uuid);
+            json.put("op", OP_SUBSCRIBE);
+            json.put("topic", topic);
             if (auth_endpoint != null) {
-                data.put("auth_endpoint", auth_endpoint);
+                json.put("auth_endpoint", auth_endpoint);
             }
         } catch (JSONException e1) {
             e1.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 
-    public String unbind(String topic) {
-        return unbind(topic, "");
-    }
-
-    public String unbind(String topic, String event) {
+    public String unsubscribe(String topic) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", UNBIND);
-            data.put("topic", topic);
-            data.put("event", event);
+            json.put("uuid", uuid);
+            json.put("op", OP_UNSUBSCRIBE);
+            json.put("topic", topic);
         } catch (JSONException e1) {
             e1.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 
-    public String historyById(String topic, String event, Integer offset) {
-        return historyById(topic, event, offset, 0);
+    public String historyById(String topic, Integer offset) {
+        return historyById(topic, offset, 0);
     }
 
-    public String historyById(String topic, String event, Integer offset, Integer limit) {
+    public String historyById(String topic, Integer offset, Integer limit) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", HISTORY);
-            data.put("topic", topic);
-            data.put("event", event);
-            data.put("arg1", HISTORY_ID);
-            data.put("arg2", String.valueOf(offset));
-            data.put("arg3", String.valueOf(limit));
+            json.put("uuid", uuid);
+            json.put("op", OP_HISTORY);
+            json.put("topic", topic);
+            json.put("arg1", HISTORY_ID);
+            json.put("arg2", String.valueOf(offset));
+            json.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 
-    public String historyByTimestamp(String topic, String event, Integer offset) {
-        return historyByTimestamp(topic, event, offset, 0);
+    public String historyByTimestamp(String topic, Integer offset) {
+        return historyByTimestamp(topic, offset, 0);
     }
 
-    public String historyByTimestamp(String topic, String event, Integer offset, Integer limit) {
+    public String historyByTimestamp(String topic, Integer offset, Integer limit) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", HISTORY);
-            data.put("topic", topic);
-            data.put("event", event);
-            data.put("arg1", HISTORY_TIMESTAMP);
-            data.put("arg2", String.valueOf(offset));
-            data.put("arg3", String.valueOf(limit));
+            json.put("uuid", uuid);
+            json.put("op", OP_HISTORY);
+            json.put("topic", topic);
+            json.put("arg1", HISTORY_TIMESTAMP);
+            json.put("arg2", String.valueOf(offset));
+            json.put("arg3", String.valueOf(limit));
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 
-    public String presence(String topic, String event) {
+    public String presence(String topic) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject data = new JSONObject();
+        JSONObject json = new JSONObject();
         try {
-            data.put("uuid", uuid);
-            data.put("op", PRESENCE);
-            data.put("topic", topic);
-            data.put("event", event);
+            json.put("uuid", uuid);
+            json.put("op", OP_PRESENCE);
+            json.put("topic", topic);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(data);
+        send(json);
         return uuid;
     }
 

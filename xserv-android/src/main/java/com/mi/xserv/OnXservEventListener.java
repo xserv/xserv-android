@@ -20,7 +20,7 @@ public interface OnXservEventListener {
 
     void OnErrorConnection(Exception e);
 
-    void OnReceiveEvents(JSONObject json);
+    void OnReceiveMessages(JSONObject json);
 
     void OnReceiveOpsResponse(JSONObject json);
 }

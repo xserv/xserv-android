@@ -37,17 +37,11 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         String message = "";
         Integer timestamp = 0;
         try {
-            message = item.getString("message");
+            message = item.getString("data");
             timestamp = item.getInt("timestamp");
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
-        /*try {
-            JSONObject json = item.getJSONObject("message");
-            message = json.getString("message");
-        } catch (JSONException ignored) {
-            // e.printStackTrace();
-        }*/
 
         holder.text.setText(message);
         holder.timestamp.setText(String.valueOf(timestamp));

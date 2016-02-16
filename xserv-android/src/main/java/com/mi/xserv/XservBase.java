@@ -119,7 +119,7 @@ public class XservBase {
         }
     }
 
-    protected void onReceiveEvents(final JSONObject json) {
+    protected void onReceiveMessages(final JSONObject json) {
         final OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
@@ -127,7 +127,7 @@ public class XservBase {
 
                 @Override
                 public void run() {
-                    delegate.OnReceiveEvents(json);
+                    delegate.OnReceiveMessages(json);
                 }
             });
         }

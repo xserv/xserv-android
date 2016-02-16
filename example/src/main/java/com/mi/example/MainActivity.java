@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mXserv.historyById("@milano", "paletta", 0);
+                mXserv.historyById("@milano", 0);
                 // mXserv.disconnect();
                 // mXserv.connect();
             }
@@ -87,8 +87,8 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mXserv.trigger("@milano", "paletta", "test messaggio android privato");
-                mXserv.trigger("milano", "all", "test messaggio android");
+                mXserv.publish("@milano","test messaggio android privato");
+                mXserv.publish("milano", "test messaggio android");
             }
         });
 
@@ -109,9 +109,9 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
-        mXserv.bind("@milano", "paletta", auth_endpoint);
+        mXserv.subscribe("@milano", auth_endpoint);
 
-        mXserv.bind("milano", "all");
+        mXserv.subscribe("milano");
     }
 
     @Override
@@ -125,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnReceiveEvents(final JSONObject json) {
+    public void OnReceiveMessages(final JSONObject json) {
         //Log.d(TAG, "EVENT " + json.toString());
 
         mDataSource.add(0, json);
