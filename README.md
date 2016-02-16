@@ -35,6 +35,9 @@ dependencies {
 
 Xserv is owned and maintained by the [mobile-italia.com] (http://mobile-italia.com).
 
+Dependencies:
+
+https://github.com/koush/AndroidAsync
 
 ### Security Disclosure
 
