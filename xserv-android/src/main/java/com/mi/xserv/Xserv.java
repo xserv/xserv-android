@@ -55,8 +55,8 @@ public class Xserv extends XservBase {
     public final static int RC_LIMIT_MESSAGES = -7;
 
     private final static String TAG = "Xserv";
-    private final static String ADDRESS = "192.168.130.153";
-    // private final static String ADDRESS = "xserv.mobile-italia.com";
+    // private final static String ADDRESS = "192.168.130.153";
+    private final static String ADDRESS = "xserv.mobile-italia.com";
     private final static String PORT = "4332";
     private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
