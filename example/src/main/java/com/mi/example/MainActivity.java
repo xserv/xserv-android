@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mXserv.publish("@milano","test messaggio android privato");
+                mXserv.publish("@milano", "test messaggio android privato");
                 mXserv.publish("milano", "test messaggio android");
             }
         });
