@@ -1,27 +1,31 @@
 package com.mi.example;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements OnXservEventListener {
     private final static String TAG = "Example";
-
+    private final static String APP_ID = "9Pf80-3";
+    private final static String TOPIC = "milano";
+    private final static String TOPIC_PRIVATE = "@milano";
     private Xserv mXserv;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
@@ -73,26 +77,25 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         mAdapter = new MyAdapter(mDataSource);
         mRecyclerView.setAdapter(mAdapter);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        final EditText editText = (EditText) findViewById(R.id.editText);
+        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
-            public void onClick(View view) {
-                mXserv.historyById("@milano", 0);
-                // mXserv.disconnect();
-                // mXserv.connect();
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                boolean handled = false;
+                if (actionId == EditorInfo.IME_ACTION_SEND) {
+                    String message =  editText.getText().toString();
+
+                    if (message.length() > 0) {
+                        mXserv.publish("milano", message);
+                        editText.setText("");
+                    }
+                    handled = true;
+                }
+                return handled;
             }
         });
 
-        FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
-        fab2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mXserv.publish("@milano", "test messaggio android privato");
-                mXserv.publish("milano", "test messaggio android");
-            }
-        });
-
-        mXserv = new Xserv("9Pf80-3");
+        mXserv = new Xserv(APP_ID);
         mXserv.setOnEventListener(this);
 
         mXserv.connect();
@@ -102,16 +105,16 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     public void OnOpenConnection() {
         Log.d(TAG, "Connected");
 
-        JSONObject auth_endpoint = new JSONObject();
+        /*JSONObject auth_endpoint = new JSONObject();
         try {
             auth_endpoint.put("user", "amatig");
             auth_endpoint.put("pass", "amatig");
         } catch (JSONException ignored) {
             // e.printStackTrace();
         }
-        mXserv.subscribe("@milano", auth_endpoint);
+        mXserv.subscribe(TOPIC_PRIVATE, auth_endpoint);*/
 
-        mXserv.subscribe("milano");
+        mXserv.subscribe(TOPIC);
     }
 
     @Override
@@ -126,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnReceiveMessages(final JSONObject json) {
-        //Log.d(TAG, "EVENT " + json.toString());
+        Log.d(TAG, "message: " + json.toString());
 
         mDataSource.add(0, json);
         mAdapter.notifyDataSetChanged();
@@ -134,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnReceiveOpsResponse(JSONObject json) {
-        Log.d(TAG, "OP " + json.toString());
+        Log.d(TAG, "operation: " + json.toString());
     }
 
 }
