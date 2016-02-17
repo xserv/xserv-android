@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -86,7 +87,9 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
                     String message =  editText.getText().toString();
 
                     if (message.length() > 0) {
-                        mXserv.publish("milano", message);
+                        mXserv.publish(TOPIC, message);
+                        // mXserv.publish(TOPIC_PRIVATE, message);
+
                         editText.setText("");
                     }
                     handled = true;
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     @Override
     public void OnOpenConnection() {
         Log.d(TAG, "Connected");
+        Log.d(TAG, "user data " + mXserv.getUserData());
 
         /*JSONObject auth_endpoint = new JSONObject();
         try {
@@ -119,12 +123,12 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnCloseConnection(Exception e) {
-        Log.d(TAG, "Disconnected");
+        Log.w(TAG, "Disconnected");
     }
 
     @Override
     public void OnErrorConnection(Exception e) {
-
+        Log.e(TAG, e.getMessage());
     }
 
     @Override

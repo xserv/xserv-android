@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
+    // signal
+    public final static int OP_HANDSHAKE = 100;
     // op
     public final static int OP_PUBLISH = 200;
     public final static int OP_SUBSCRIBE = 201;
@@ -55,10 +57,10 @@ public class Xserv extends XservBase {
     public final static int RC_LIMIT_MESSAGES = -7;
 
     private final static String TAG = "Xserv";
-    // private final static String ADDRESS = "192.168.130.153";
-    private final static String ADDRESS = "xserv.mobile-italia.com";
+    private final static String ADDRESS = "192.168.130.153";
+    // private final static String ADDRESS = "xserv.mobile-italia.com";
     private final static String PORT = "4332";
-    private final static String URL = "ws://%1$s:%2$s/ws/%3$s";
+    private final static String URL = "ws://%1$s:%2$s/ws/%3$s?version=%4$s";
     private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
     private final static int DEFAULT_RI = 5000;
 
@@ -106,7 +108,7 @@ public class Xserv extends XservBase {
 
         if (!isConnected()) {
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-            mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId), null,
+            mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
 
                         @Override
@@ -114,11 +116,7 @@ public class Xserv extends XservBase {
                             if (e == null) {
                                 setOtherWsCallback(ws);
 
-                                sendStat();
-
-                                isConnected = true;
-
-                                onOpenConnection();
+                                handshake();
                             } else {
                                 onErrorConnection(e);
 
@@ -174,34 +172,63 @@ public class Xserv extends XservBase {
                     } else if (op > 0) {
                         int rc = 0;
                         String topic = "";
+                        String descr = "";
                         try {
                             rc = json.getInt("rc");
                             topic = json.getString("topic");
+                            descr = json.getString("descr");
 
                             json.put("name", stringifyOp(op));
                         } catch (JSONException ignored) {
                         }
 
-                        try {
-                            String data = json.getString("data");
-                            byte[] b = Base64.decode(data, Base64.DEFAULT);
-                            String raw = new String(b, "UTF-8");
-                            Object j = new JSONTokener(raw).nextValue();
-                            if (j instanceof JSONObject) {
-                                JSONObject data_json = new JSONObject(raw);
-                                json.put("data", data_json);
+                        if (op == OP_HANDSHAKE) { // vera connection
+                            if (rc == RC_OK) {
+                                try {
+                                    String data = json.getString("data");
+                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
+                                    String raw = new String(b, "UTF-8");
+                                    Object j = new JSONTokener(raw).nextValue();
+                                    if (j instanceof JSONObject) {
+                                        JSONObject data_json = new JSONObject(raw);
 
-                                // bind privata ok
-                                if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
-                                    setUserData(data_json);
+                                        setUserData(data_json);
+                                    }
+                                } catch (JSONException | UnsupportedEncodingException ignored) {
                                 }
-                            } else if (j instanceof JSONArray) {
-                                json.put("data", new JSONArray(raw));
-                            }
-                        } catch (JSONException | UnsupportedEncodingException ignored) {
-                        }
 
-                        onReceiveOpsResponse(json);
+                                if (mUserData.length() > 0) {
+                                    isConnected = true;
+
+                                    onOpenConnection();
+                                } else {
+                                    onErrorConnection(new Exception(descr));
+                                }
+                            } else {
+                                onErrorConnection(new Exception(descr));
+                            }
+                        } else {
+                            try {
+                                String data = json.getString("data");
+                                byte[] b = Base64.decode(data, Base64.DEFAULT);
+                                String raw = new String(b, "UTF-8");
+                                Object j = new JSONTokener(raw).nextValue();
+                                if (j instanceof JSONObject) {
+                                    JSONObject data_json = new JSONObject(raw);
+                                    json.put("data", data_json);
+
+                                    // bind privata ok
+                                    if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
+                                        setUserData(data_json);
+                                    }
+                                } else if (j instanceof JSONArray) {
+                                    json.put("data", new JSONArray(raw));
+                                }
+                            } catch (JSONException | UnsupportedEncodingException ignored) {
+                            }
+
+                            onReceiveOpsResponse(json);
+                        }
                     }
                 }
             }
@@ -238,7 +265,7 @@ public class Xserv extends XservBase {
         mReconnectInterval = milliseconds;
     }
 
-    private void sendStat() {
+    private void handshake() {
         JSONObject stat = new JSONObject();
         try {
             String model = Build.MODEL;
@@ -292,7 +319,10 @@ public class Xserv extends XservBase {
 
                 final SimpleHttpRequest request =
                         new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+                
                 request.setContentType("application/json; charset=UTF-8");
+
+                request.setParam("socket_id", getSocketId());
                 request.setParam("topic", topic);
                 request.setParam("user", auth_user);
                 request.setParam("pass", auth_pass);
@@ -349,6 +379,16 @@ public class Xserv extends XservBase {
         }
     }
 
+    public String getSocketId() {
+        String socket_id = "";
+        try {
+            socket_id = mUserData.getString("socket_id");
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
+        }
+        return socket_id;
+    }
+
     public JSONObject getUserData() {
         return mUserData;
     }
@@ -373,6 +413,8 @@ public class Xserv extends XservBase {
                 return "leave";
             case OP_PUBLISH:
                 return "publish";
+            case OP_HANDSHAKE:
+                return "handshake";
         }
         return "";
     }
