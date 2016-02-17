@@ -319,7 +319,7 @@ public class Xserv extends XservBase {
 
                 final SimpleHttpRequest request =
                         new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
-                
+
                 request.setContentType("application/json; charset=UTF-8");
 
                 request.setParam("socket_id", getSocketId());

@@ -9,7 +9,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -17,7 +16,6 @@ import android.widget.TextView;
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -84,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 boolean handled = false;
                 if (actionId == EditorInfo.IME_ACTION_SEND) {
-                    String message =  editText.getText().toString();
+                    String message = editText.getText().toString();
 
                     if (message.length() > 0) {
                         mXserv.publish(TOPIC, message);
