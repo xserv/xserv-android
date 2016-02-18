@@ -120,10 +120,8 @@ public class Xserv extends XservBase {
                             } else {
                                 onErrorConnection(e);
 
-                                // eccezione, error socket
-                                if (isAutoReconnect) {
-                                    reConnect();
-                                }
+                                // eccezione, error socket in connection non e' la error
+                                reConnect();
                             }
                         }
                     });
@@ -139,110 +137,114 @@ public class Xserv extends XservBase {
 
                 onCloseConnection(e);
 
-                if (isAutoReconnect) {
-                    reConnect();
-                }
+                reConnect();
             }
         });
-
+        
         ws.setStringCallback(new WebSocket.StringCallback() {
 
             @Override
             public void onStringAvailable(String event) {
-                JSONObject json = null;
-                try {
-                    json = new JSONObject(event);
-                } catch (JSONException ignored) {
-                }
-
-                if (json != null) {
-                    int op = 0;
-                    try {
-                        op = json.getInt("op");
-                    } catch (JSONException ignored) {
-                    }
-
-                    if (op == 0) {
-                        try {
-                            json.put("data", new JSONObject(json.getString("data")));
-                        } catch (JSONException ignored) {
-                        }
-
-                        onReceiveMessages(json);
-                    } else if (op > 0) {
-                        int rc = 0;
-                        String topic = "";
-                        String descr = "";
-                        try {
-                            rc = json.getInt("rc");
-                            topic = json.getString("topic");
-                            descr = json.getString("descr");
-
-                            json.put("name", stringifyOp(op));
-                        } catch (JSONException ignored) {
-                        }
-
-                        if (op == OP_HANDSHAKE) { // vera connection
-                            if (rc == RC_OK) {
-                                try {
-                                    String data = json.getString("data");
-                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                    String raw = new String(b, "UTF-8");
-                                    Object j = new JSONTokener(raw).nextValue();
-                                    if (j instanceof JSONObject) {
-                                        JSONObject data_json = new JSONObject(raw);
-
-                                        setUserData(data_json);
-                                    }
-                                } catch (JSONException | UnsupportedEncodingException ignored) {
-                                }
-
-                                if (mUserData.length() > 0) {
-                                    isConnected = true;
-
-                                    onOpenConnection();
-                                } else {
-                                    onErrorConnection(new Exception(descr));
-                                }
-                            } else {
-                                onErrorConnection(new Exception(descr));
-                            }
-                        } else {
-                            try {
-                                String data = json.getString("data");
-                                byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                String raw = new String(b, "UTF-8");
-                                Object j = new JSONTokener(raw).nextValue();
-                                if (j instanceof JSONObject) {
-                                    JSONObject data_json = new JSONObject(raw);
-                                    json.put("data", data_json);
-
-                                    // bind privata ok
-                                    if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
-                                        setUserData(data_json);
-                                    }
-                                } else if (j instanceof JSONArray) {
-                                    json.put("data", new JSONArray(raw));
-                                }
-                            } catch (JSONException | UnsupportedEncodingException ignored) {
-                            }
-
-                            onReceiveOpsResponse(json);
-                        }
-                    }
-                }
+                manageMessage(event);
             }
         });
     }
 
-    private void reConnect() {
-        mHandler.postDelayed(new Runnable() {
+    private void manageMessage(String event) {
+        JSONObject json = null;
+        try {
+            json = new JSONObject(event);
+        } catch (JSONException ignored) {
+        }
 
-            @Override
-            public void run() {
-                connect(true);
+        if (json != null) {
+            int op = 0;
+            try {
+                op = json.getInt("op");
+            } catch (JSONException ignored) {
             }
-        }, mReconnectInterval);
+
+            if (op == 0) {
+                try {
+                    json.put("data", new JSONObject(json.getString("data")));
+                } catch (JSONException ignored) {
+                }
+
+                onReceiveMessages(json);
+            } else if (op > 0) {
+                int rc = 0;
+                String topic = "";
+                String descr = "";
+                try {
+                    rc = json.getInt("rc");
+                    topic = json.getString("topic");
+                    descr = json.getString("descr");
+
+                    json.put("name", stringifyOp(op));
+                } catch (JSONException ignored) {
+                }
+
+                if (op == OP_HANDSHAKE) { // vera connection
+                    if (rc == RC_OK) {
+                        try {
+                            String data = json.getString("data");
+                            byte[] b = Base64.decode(data, Base64.DEFAULT);
+                            String raw = new String(b, "UTF-8");
+                            Object j = new JSONTokener(raw).nextValue();
+                            if (j instanceof JSONObject) {
+                                JSONObject data_json = new JSONObject(raw);
+
+                                setUserData(data_json);
+                            }
+                        } catch (JSONException | UnsupportedEncodingException ignored) {
+                        }
+
+                        if (mUserData.length() > 0) {
+                            isConnected = true;
+
+                            onOpenConnection();
+                        } else {
+                            onErrorConnection(new Exception(descr));
+                        }
+                    } else {
+                        onErrorConnection(new Exception(descr));
+                    }
+                } else {
+                    try {
+                        String data = json.getString("data");
+                        byte[] b = Base64.decode(data, Base64.DEFAULT);
+                        String raw = new String(b, "UTF-8");
+                        Object j = new JSONTokener(raw).nextValue();
+                        if (j instanceof JSONObject) {
+                            JSONObject data_json = new JSONObject(raw);
+                            json.put("data", data_json);
+
+                            // bind privata ok
+                            if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
+                                setUserData(data_json);
+                            }
+                        } else if (j instanceof JSONArray) {
+                            json.put("data", new JSONArray(raw));
+                        }
+                    } catch (JSONException | UnsupportedEncodingException ignored) {
+                    }
+
+                    onReceiveOpsResponse(json);
+                }
+            }
+        }
+    }
+
+    private void reConnect() {
+        if (isAutoReconnect) {
+            mHandler.postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    connect(true);
+                }
+            }, mReconnectInterval);
+        }
     }
 
     public void disconnect() {
