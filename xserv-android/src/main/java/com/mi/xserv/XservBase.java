@@ -40,8 +40,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 public class XservBase {
-    protected final Handler mHandler = new Handler(Looper.getMainLooper());
-    protected WeakReference<OnXservEventListener> mDelegate;
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private WeakReference<OnXservEventListener> mDelegate;
     private TrustManagerFactory mTmf;
     private SSLContext mSSLContext;
 
@@ -51,6 +51,10 @@ public class XservBase {
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
         mDelegate = new WeakReference<>(onEventListener);
+    }
+
+    protected Handler getMainLooper() {
+        return mHandler;
     }
 
     private void fixAuthority() {
@@ -85,7 +89,7 @@ public class XservBase {
         }
     }
 
-    public AsyncHttpClient getWebSocketClient(boolean securiry) {
+    protected AsyncHttpClient getWebSocketClient(boolean securiry) {
         AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
 
         if (securiry) {
@@ -100,7 +104,7 @@ public class XservBase {
         return as;
     }
 
-    public SimpleHttpRequest getHttpClient(String url, boolean securiry) {
+    protected SimpleHttpRequest getHttpClient(String url, boolean securiry) {
         SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, url);
 
         if (securiry) {

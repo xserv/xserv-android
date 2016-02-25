@@ -79,7 +79,7 @@ public class Xserv extends XservBase {
      *
      * @param app_id identifier of your application. You can find it on Xserv Dashboard.
      */
-    public Xserv(String app_id, boolean security) {
+    public Xserv(String app_id) {
         super();
 
         mAppId = app_id;
@@ -91,11 +91,15 @@ public class Xserv extends XservBase {
         isConnected = false;
 
         // TLS
-        isSecure = security;
+        isSecure = true;
     }
 
     public static boolean isPrivateTopic(String topic) {
         return topic.startsWith("@");
+    }
+
+    public void disableTLS() {
+        isSecure = false;
     }
 
     public boolean isConnected() {
@@ -250,7 +254,7 @@ public class Xserv extends XservBase {
 
     private void reConnect() {
         if (isAutoReconnect) {
-            mHandler.postDelayed(new Runnable() {
+            getMainLooper().postDelayed(new Runnable() {
 
                 @Override
                 public void run() {
