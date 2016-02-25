@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.mi.example"
-        minSdkVersion 8
+        minSdkVersion 9
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -21,7 +21,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.android.support:design:23.1.1'
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile 'com.android.support:design:23.2.0'
     compile project(path: ':xserv-android') // use in your project 'com.mi.xserv:xserv-android:+'
 }

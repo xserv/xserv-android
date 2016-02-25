@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             }
         });
 
-        mXserv = new Xserv(APP_ID);
+        mXserv = new Xserv(APP_ID, true);
         mXserv.setOnEventListener(this);
 
         mXserv.connect();
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnErrorConnection(Exception e) {
-        Log.e(TAG, e.getMessage());
+        e.printStackTrace();
     }
 
     @Override

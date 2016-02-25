@@ -15,18 +15,32 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 
+import com.koushikdutta.async.http.AsyncHttpClient;
+
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
 public class XservBase {
     protected final Handler mHandler = new Handler(Looper.getMainLooper());
-    private WeakReference<OnXservEventListener> mDelegate;
+    protected WeakReference<OnXservEventListener> mDelegate;
 
     public XservBase() {
         mDelegate = new WeakReference<>(null);
@@ -34,6 +48,48 @@ public class XservBase {
 
     public void setOnEventListener(OnXservEventListener onEventListener) {
         mDelegate = new WeakReference<>(onEventListener);
+    }
+
+    public AsyncHttpClient getClient(boolean securiry) {
+        OnXservEventListener delegate = mDelegate.get();
+
+        TrustManagerFactory tmf = null;
+        SSLContext context = null;
+
+        if (delegate != null && securiry) {
+            try {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                InputStream caInput = ((Context) delegate).getResources().openRawResource(R.raw.lets_encrypt_x1_cross_signed_pem);
+                Certificate ca = cf.generateCertificate(caInput);
+                caInput.close();
+
+                // Create a KeyStore containing our trusted CAs
+                String keyStoreType = KeyStore.getDefaultType();
+                KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+                keyStore.load(null, null);
+                keyStore.setCertificateEntry("ca", ca);
+
+                // Create a TrustManager that trusts the CAs in our KeyStore
+                String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+                tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+                tmf.init(keyStore);
+
+                // Create an SSLContext that uses our TrustManager
+                context = SSLContext.getInstance("TLS");
+                context.init(null, tmf.getTrustManagers(), null);
+            } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException |
+                    KeyManagementException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
+        if (tmf != null && context != null) {
+            as.getSSLSocketMiddleware().setTrustManagers(tmf.getTrustManagers());
+            as.getSSLSocketMiddleware().setSSLContext(context);
+        }
+
+        return as;
     }
 
     protected String getDeviceID() {

@@ -39,7 +39,7 @@ public class Xserv extends XservBase {
     public final static int OP_UNSUBSCRIBE = 202;
     public final static int OP_HISTORY = 203;
     public final static int OP_PRESENCE = 204;
-    // in uso in presence
+    public final static int OP_TOPICS = 205;
     public final static int OP_JOIN = OP_SUBSCRIBE + 200;
     public final static int OP_LEAVE = OP_UNSUBSCRIBE + 200;
     // in uso in history
@@ -58,10 +58,11 @@ public class Xserv extends XservBase {
 
     private final static String TAG = "Xserv";
     // private final static String ADDRESS = "192.168.130.153";
-    private final static String ADDRESS = "xserv.mobile-italia.com";
+    private final static String ADDRESS = "mobile-italia.com";
     private final static String PORT = "4332";
-    private final static String URL = "ws://%1$s:%2$s/ws/%3$s?version=%4$s";
-    private final static String DEFAULT_AUTH_URL = "http://%1$s:%2$s/app/%3$s/auth_user";
+    private final static String TLS_PORT = "8332";
+    private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
+    private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/app/%4$s/auth_user";
     private final static int DEFAULT_RI = 5000;
 
     // attributes
@@ -71,13 +72,14 @@ public class Xserv extends XservBase {
     private boolean isAutoReconnect;
     private JSONObject mUserData;
     private boolean isConnected;
+    private boolean isSecure;
 
     /**
      * Return an instance of Xserv connector.
      *
      * @param app_id identifier of your application. You can find it on Xserv Dashboard.
      */
-    public Xserv(String app_id) {
+    public Xserv(String app_id, boolean security) {
         super();
 
         mAppId = app_id;
@@ -87,6 +89,9 @@ public class Xserv extends XservBase {
 
         isAutoReconnect = false;
         isConnected = false;
+
+        // TLS
+        isSecure = security;
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -107,8 +112,17 @@ public class Xserv extends XservBase {
         }
 
         if (!isConnected()) {
-            AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-            mConn = as.websocket(String.format(URL, ADDRESS, PORT, mAppId, BuildConfig.VERSION_NAME), null,
+            String protocol = "";
+            String port = PORT;
+            if (isSecure) {
+                protocol = "s";
+                port = TLS_PORT;
+            }
+
+            AsyncHttpClient as = getClient(isSecure);
+
+            mConn = as.websocket(String.format(
+                            URL, protocol, ADDRESS, port, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
 
                         @Override
@@ -140,7 +154,7 @@ public class Xserv extends XservBase {
                 reConnect();
             }
         });
-        
+
         ws.setStringCallback(new WebSocket.StringCallback() {
 
             @Override
@@ -306,7 +320,14 @@ public class Xserv extends XservBase {
             }
 
             if (auth_endpoint != null) {
-                String auth_url = String.format(DEFAULT_AUTH_URL, ADDRESS, PORT, mAppId);
+                String protocol = "";
+                String port = PORT;
+                if (isSecure) {
+                    protocol = "s";
+                    port = TLS_PORT;
+                }
+
+                String auth_url = String.format(DEFAULT_AUTH_URL, protocol, ADDRESS, port, mAppId);
                 String auth_user = "";
                 String auth_pass = "";
                 try {
@@ -417,6 +438,8 @@ public class Xserv extends XservBase {
                 return "publish";
             case OP_HANDSHAKE:
                 return "handshake";
+            case OP_TOPICS:
+                return "topics";
         }
         return "";
     }
@@ -536,6 +559,21 @@ public class Xserv extends XservBase {
             json.put("uuid", uuid);
             json.put("op", OP_PRESENCE);
             json.put("topic", topic);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        send(json);
+        return uuid;
+    }
+
+    public String topics() {
+        if (!isConnected()) return "";
+
+        String uuid = UUID.randomUUID().toString();
+        JSONObject json = new JSONObject();
+        try {
+            json.put("uuid", uuid);
+            json.put("op", OP_TOPICS);
         } catch (JSONException e) {
             e.printStackTrace();
         }
