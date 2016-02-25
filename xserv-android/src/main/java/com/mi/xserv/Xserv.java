@@ -120,7 +120,6 @@ public class Xserv extends XservBase {
             }
 
             AsyncHttpClient as = getWebSocketClient(isSecure);
-
             mConn = as.websocket(String.format(
                             URL, protocol, ADDRESS, port, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
