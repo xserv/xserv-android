@@ -12,6 +12,8 @@ package com.mi.xserv.http;
 
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
+
 public interface IRequest {
 
     String getUserAgent();
@@ -35,5 +37,15 @@ public interface IRequest {
     String getParam(String key);
 
     Set<String> getParamsKey();
+
+    // TLS
+
+    boolean getSecure();
+
+    void setSecure(boolean secure);
+
+    SSLContext getSSLContext();
+
+    void setSSLContext(SSLContext sslContext);
 
 }

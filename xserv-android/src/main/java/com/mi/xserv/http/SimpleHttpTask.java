@@ -29,6 +29,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Locale;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements ITaskListener {
     private int mTimeoutConnection = 15000;
     private int mTimeoutSocket = 10000;
@@ -72,10 +74,22 @@ public class SimpleHttpTask extends AsyncTask<IRequest, Void, String> implements
         InputStream is = null;
 
         try {
-            Log.d(this.getClass().getName(), "Http request: " + req.getUrl());
-
             URL url = new URL(req.getUrl());
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn;
+
+            if (req.getSecure()) {
+                conn = (HttpsURLConnection) url.openConnection();
+                // fix authority
+                if (req.getSSLContext() != null) {
+                    ((HttpsURLConnection) conn).setSSLSocketFactory(req.getSSLContext().getSocketFactory());
+                }
+
+                Log.d(this.getClass().getName(), "Https request: " + req.getUrl());
+            } else {
+                conn = (HttpURLConnection) url.openConnection();
+
+                Log.d(this.getClass().getName(), "Http request: " + req.getUrl());
+            }
 
             conn.setReadTimeout(mTimeoutSocket /* milliseconds */);
             conn.setConnectTimeout(mTimeoutConnection /* milliseconds */);

@@ -13,6 +13,8 @@ package com.mi.xserv.http;
 import java.util.HashMap;
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
+
 public class SimpleHttpRequest implements IRequest {
     public static final String POST = "post";
     public static final String GET = "get";
@@ -21,6 +23,9 @@ public class SimpleHttpRequest implements IRequest {
     private String mMethod;
     private String mContentType;
     private String mUrl;
+    // TLS
+    private boolean mSecure;
+    private SSLContext mSSLContext;
 
     private SimpleHttpRequest() {
         this.params = new HashMap<>();
@@ -86,6 +91,26 @@ public class SimpleHttpRequest implements IRequest {
     @Override
     public Set<String> getParamsKey() {
         return this.params.keySet();
+    }
+
+    @Override
+    public boolean getSecure() {
+        return mSecure;
+    }
+
+    @Override
+    public void setSecure(boolean secure) {
+        mSecure = secure;
+    }
+
+    @Override
+    public SSLContext getSSLContext() {
+        return mSSLContext;
+    }
+
+    @Override
+    public void setSSLContext(SSLContext sslContext) {
+        mSSLContext = sslContext;
     }
 
 }

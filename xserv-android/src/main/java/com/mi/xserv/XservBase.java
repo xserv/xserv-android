@@ -41,6 +41,8 @@ import javax.net.ssl.TrustManagerFactory;
 public class XservBase {
     protected final Handler mHandler = new Handler(Looper.getMainLooper());
     protected WeakReference<OnXservEventListener> mDelegate;
+    protected TrustManagerFactory mTmf = null;
+    protected SSLContext mSSLContext = null;
 
     public XservBase() {
         mDelegate = new WeakReference<>(null);
@@ -50,13 +52,10 @@ public class XservBase {
         mDelegate = new WeakReference<>(onEventListener);
     }
 
-    public AsyncHttpClient getClient(boolean securiry) {
+    private void fixAuthority() {
         OnXservEventListener delegate = mDelegate.get();
 
-        TrustManagerFactory tmf = null;
-        SSLContext context = null;
-
-        if (delegate != null && securiry) {
+        if (delegate != null) {
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 InputStream caInput = ((Context) delegate).getResources().openRawResource(R.raw.lets_encrypt_x1_cross_signed_pem);
@@ -71,22 +70,30 @@ public class XservBase {
 
                 // Create a TrustManager that trusts the CAs in our KeyStore
                 String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-                tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-                tmf.init(keyStore);
+                mTmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+                mTmf.init(keyStore);
 
                 // Create an SSLContext that uses our TrustManager
-                context = SSLContext.getInstance("TLS");
-                context.init(null, tmf.getTrustManagers(), null);
+                mSSLContext = SSLContext.getInstance("TLS");
+                mSSLContext.init(null, mTmf.getTrustManagers(), null);
             } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException |
                     KeyManagementException | IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public AsyncHttpClient getSocketClient(boolean securiry) {
+        if (securiry) {
+            fixAuthority();
+        }
 
         AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-        if (tmf != null && context != null) {
-            as.getSSLSocketMiddleware().setTrustManagers(tmf.getTrustManagers());
-            as.getSSLSocketMiddleware().setSSLContext(context);
+
+        // fix authority
+        if (mTmf != null && mSSLContext != null) {
+            as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
+            as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
         }
 
         return as;

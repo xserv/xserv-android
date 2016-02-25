@@ -119,7 +119,7 @@ public class Xserv extends XservBase {
                 port = TLS_PORT;
             }
 
-            AsyncHttpClient as = getClient(isSecure);
+            AsyncHttpClient as = getSocketClient(isSecure);
 
             mConn = as.websocket(String.format(
                             URL, protocol, ADDRESS, port, mAppId, BuildConfig.VERSION_NAME), null,
@@ -342,6 +342,11 @@ public class Xserv extends XservBase {
 
                 final SimpleHttpRequest request =
                         new SimpleHttpRequest(SimpleHttpRequest.POST, auth_url);
+
+                if (isSecure && mSSLContext != null) {
+                    request.setSecure(true);
+                    request.setSSLContext(mSSLContext);
+                }
 
                 request.setContentType("application/json; charset=UTF-8");
 
