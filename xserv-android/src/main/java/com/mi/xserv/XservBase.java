@@ -16,6 +16,7 @@ import android.os.Looper;
 import android.provider.Settings;
 
 import com.koushikdutta.async.http.AsyncHttpClient;
+import com.mi.xserv.http.SimpleHttpRequest;
 
 import org.json.JSONObject;
 
@@ -41,8 +42,8 @@ import javax.net.ssl.TrustManagerFactory;
 public class XservBase {
     protected final Handler mHandler = new Handler(Looper.getMainLooper());
     protected WeakReference<OnXservEventListener> mDelegate;
-    protected TrustManagerFactory mTmf = null;
-    protected SSLContext mSSLContext = null;
+    private TrustManagerFactory mTmf;
+    private SSLContext mSSLContext;
 
     public XservBase() {
         mDelegate = new WeakReference<>(null);
@@ -55,7 +56,7 @@ public class XservBase {
     private void fixAuthority() {
         OnXservEventListener delegate = mDelegate.get();
 
-        if (delegate != null) {
+        if (delegate != null && (mTmf == null || mSSLContext == null)) {
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 InputStream caInput = ((Context) delegate).getResources().openRawResource(R.raw.lets_encrypt_x1_cross_signed_pem);
@@ -78,25 +79,41 @@ public class XservBase {
                 mSSLContext.init(null, mTmf.getTrustManagers(), null);
             } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException |
                     KeyManagementException | IOException e) {
+
                 e.printStackTrace();
             }
         }
     }
 
-    public AsyncHttpClient getSocketClient(boolean securiry) {
-        if (securiry) {
-            fixAuthority();
-        }
-
+    public AsyncHttpClient getWebSocketClient(boolean securiry) {
         AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
 
-        // fix authority
-        if (mTmf != null && mSSLContext != null) {
-            as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
-            as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
+        if (securiry) {
+            fixAuthority();
+
+            if (mTmf != null && mSSLContext != null) {
+                as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
+                as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
+            }
         }
 
         return as;
+    }
+
+    public SimpleHttpRequest getHttpClient(String url, boolean securiry) {
+        SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, url);
+
+        if (securiry) {
+            request.setSecure(true);
+
+            fixAuthority();
+
+            if (mSSLContext != null) {
+                request.setSSLContext(mSSLContext);
+            }
+        }
+
+        return request;
     }
 
     protected String getDeviceID() {
