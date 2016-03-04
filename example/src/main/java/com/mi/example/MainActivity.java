@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -107,14 +108,18 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         Log.d(TAG, "Connected");
         Log.d(TAG, "user data " + mXserv.getUserData());
 
-        /*JSONObject auth_endpoint = new JSONObject();
+        /*JSONObject auth = new JSONObject();
         try {
-            auth_endpoint.put("user", "amatig");
-            auth_endpoint.put("pass", "amatig");
+            // JSONObject headers = new JSONObject();
+            // auth.put("headers", headers);
+
+            JSONObject params = new JSONObject();
+            params.put("user", "amatig");
+            params.put("pass", "amatig");
+            auth.put("params", params);
         } catch (JSONException ignored) {
-            // e.printStackTrace();
         }
-        mXserv.subscribe(TOPIC_PRIVATE, auth_endpoint);*/
+        mXserv.subscribe(TOPIC_PRIVATE, auth);*/
 
         mXserv.subscribe(TOPIC);
     }

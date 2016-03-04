@@ -14,7 +14,7 @@
         android:id="@+id/my_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="44dp"
+        android:layout_marginBottom="48dp"
         android:background="@color/window"
         android:clipToPadding="false"
         android:paddingBottom="8dip"
@@ -28,19 +28,19 @@
         android:layout_width="match_parent"
         android:layout_height="1dip"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="44dp"
+        android:layout_marginBottom="48dp"
         android:background="@color/border" />
 
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="48dp"
         android:layout_gravity="bottom"
         android:layout_marginLeft="13dip"
         android:layout_marginRight="13dip"
         android:hint="Message"
         android:imeOptions="actionSend"
         android:inputType="text"
-        android:textSize="14sp" />
+        android:textSize="16sp" />
 
 </FrameLayout>

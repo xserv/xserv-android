@@ -16,7 +16,6 @@ import android.os.Looper;
 import android.provider.Settings;
 
 import com.koushikdutta.async.http.AsyncHttpClient;
-import com.mi.xserv.http.SimpleHttpRequest;
 
 import org.json.JSONObject;
 
@@ -104,20 +103,19 @@ public class XservBase {
         return as;
     }
 
-    protected SimpleHttpRequest getHttpClient(String url, boolean securiry) {
-        SimpleHttpRequest request = new SimpleHttpRequest(SimpleHttpRequest.POST, url);
+    protected AsyncHttpClient getHttpClient(String url) {
+        AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
 
-        if (securiry) {
-            request.setSecure(true);
-
+        if (url.startsWith("https://mobile-italia.com")) {
             fixAuthority();
 
-            if (mSSLContext != null) {
-                request.setSSLContext(mSSLContext);
+            if (mTmf != null && mSSLContext != null) {
+                as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
+                as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
             }
         }
 
-        return request;
+        return as;
     }
 
     protected String getDeviceID() {

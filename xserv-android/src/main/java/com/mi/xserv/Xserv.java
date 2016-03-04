@@ -10,15 +10,16 @@
 
 package com.mi.xserv;
 
+import android.net.Uri;
 import android.os.Build;
 import android.util.Base64;
 
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
+import com.koushikdutta.async.http.AsyncHttpRequest;
+import com.koushikdutta.async.http.AsyncHttpResponse;
 import com.koushikdutta.async.http.WebSocket;
-import com.mi.xserv.http.ITaskListener;
-import com.mi.xserv.http.SimpleHttpRequest;
-import com.mi.xserv.http.SimpleHttpTask;
+import com.koushikdutta.async.http.body.JSONObjectBody;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,22 +27,22 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
-    // signal
-    public final static int OP_HANDSHAKE = 100;
     // op
+    public final static int OP_HANDSHAKE = 100;
     public final static int OP_PUBLISH = 200;
     public final static int OP_SUBSCRIBE = 201;
     public final static int OP_UNSUBSCRIBE = 202;
     public final static int OP_HISTORY = 203;
-    public final static int OP_PRESENCE = 204;
+    public final static int OP_USERS = 204;
     public final static int OP_TOPICS = 205;
-    public final static int OP_JOIN = OP_SUBSCRIBE + 200;
-    public final static int OP_LEAVE = OP_UNSUBSCRIBE + 200;
+    public final static int OP_JOIN = 401;
+    public final static int OP_LEAVE = 402;
     // in uso in history
     public final static String HISTORY_ID = "id";
     public final static String HISTORY_TIMESTAMP = "timestamp";
@@ -57,8 +58,8 @@ public class Xserv extends XservBase {
     public final static int RC_LIMIT_MESSAGES = -7;
 
     private final static String TAG = "Xserv";
-    // private final static String ADDRESS = "192.168.130.153";
-    private final static String ADDRESS = "mobile-italia.com";
+    // private final static String HOST = "192.168.130.153";
+    private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
@@ -66,7 +67,7 @@ public class Xserv extends XservBase {
     private final static int DEFAULT_RI = 5000;
 
     // attributes
-    private final String mAppId;
+    private String mAppId;
     private Future<WebSocket> mConn;
     private int mReconnectInterval;
     private boolean isAutoReconnect;
@@ -125,7 +126,7 @@ public class Xserv extends XservBase {
 
             AsyncHttpClient as = getWebSocketClient(isSecure);
             mConn = as.websocket(String.format(
-                            URL, protocol, ADDRESS, port, mAppId, BuildConfig.VERSION_NAME), null,
+                            URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
 
                         @Override
@@ -316,13 +317,13 @@ public class Xserv extends XservBase {
         }
 
         if (op == OP_SUBSCRIBE && isPrivateTopic(topic)) {
-            JSONObject auth_endpoint = null;
+            JSONObject auth = null;
             try {
-                auth_endpoint = json.getJSONObject("auth_endpoint");
+                auth = json.getJSONObject("auth");
             } catch (JSONException ignored) {
             }
 
-            if (auth_endpoint != null) {
+            if (auth != null) {
                 String protocol = "";
                 String port = PORT;
                 if (isSecure) {
@@ -330,63 +331,80 @@ public class Xserv extends XservBase {
                     port = TLS_PORT;
                 }
 
-                String auth_url = String.format(DEFAULT_AUTH_URL, protocol, ADDRESS, port, mAppId);
-                String auth_user = "";
-                String auth_pass = "";
+                String endpoint = String.format(DEFAULT_AUTH_URL, protocol, HOST, port, mAppId);
                 try {
-                    auth_url = auth_endpoint.getString("endpoint");
-                } catch (JSONException ignored) {
-                }
-                try {
-                    auth_user = auth_endpoint.getString("user");
-                    auth_pass = auth_endpoint.getString("pass");
+                    endpoint = auth.getString("endpoint");
                 } catch (JSONException ignored) {
                 }
 
-                final SimpleHttpRequest request = getHttpClient(auth_url, isSecure);
-                request.setContentType("application/json; charset=UTF-8");
+                AsyncHttpClient as = getHttpClient(endpoint);
+                AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "POST");
 
-                request.setParam("socket_id", getSocketId());
-                request.setParam("topic", topic);
-                request.setParam("user", auth_user);
-                request.setParam("pass", auth_pass);
+                // add custom headers
+                try {
+                    JSONObject headers = auth.getJSONObject("headers");
+                    Iterator<?> keys = headers.keys();
+                    while (keys.hasNext()) {
+                        String key = (String) keys.next();
+                        request.setHeader(key, (String) headers.get(key));
+                    }
+                } catch (JSONException ignored) {
+                }
 
-                SimpleHttpTask task = new SimpleHttpTask();
+                final JSONObject payload = new JSONObject();
+                try {
+                    payload.put("socket_id", getSocketId());
+                    payload.put("topic", topic);
+                } catch (JSONException ignored) {
+                }
 
-                task.setOnResponseListener(new ITaskListener.OnResponseListener() {
+                // add custom params payload
+                try {
+                    JSONObject params = auth.getJSONObject("params");
+                    Iterator<?> keys = params.keys();
+                    while (keys.hasNext()) {
+                        String key = (String) keys.next();
+                        payload.put(key, params.get(key));
+                    }
+                } catch (JSONException ignored) {
+                }
 
+                request.setBody(new JSONObjectBody(payload));
+
+                as.executeJSONObject(request, new AsyncHttpClient.JSONObjectCallback() {
                     @Override
-                    public void onResponse(String output) {
-                        JSONObject new_json = null;
-                        try {
-                            new_json = new JSONObject(json.toString()); // clone
-                            new_json.remove("auth_endpoint");
-                        } catch (JSONException ignored) {
-                        }
-
-                        if (new_json != null) {
+                    public void onCompleted(Exception e, AsyncHttpResponse source, JSONObject result) {
+                        if (e == null) {
+                            JSONObject new_json = null;
                             try {
-                                JSONObject data_sign = new JSONObject(output);
-                                new_json.put("arg1", request.getParam("user"));
-                                new_json.put("arg2", data_sign.getString("data"));
-                                new_json.put("arg3", data_sign.getString("sign"));
+                                new_json = new JSONObject(json.toString()); // clone
+                                new_json.remove("auth");
                             } catch (JSONException ignored) {
                             }
 
-                            wsSend(new_json);
+                            if (new_json != null) {
+                                String user = "";
+                                try {
+                                    user = payload.getString("user");
+                                } catch (JSONException ignored) {
+                                }
+                                try {
+                                    new_json.put("arg1", user);
+                                    new_json.put("arg2", result.getString("data"));
+                                    new_json.put("arg3", result.getString("sign"));
+                                } catch (JSONException ignored) {
+                                }
+
+                                wsSend(new_json);
+                            } else {
+                                // like fail
+                                wsSend(json);
+                            }
                         } else {
-                            // like fail
                             wsSend(json);
                         }
                     }
-
-                    @Override
-                    public void onFail() {
-                        wsSend(json);
-                    }
                 });
-
-                task.execute(request);
             } else {
                 wsSend(json);
             }
@@ -429,8 +447,8 @@ public class Xserv extends XservBase {
                 return "unsubscribe";
             case OP_HISTORY:
                 return "history";
-            case OP_PRESENCE:
-                return "presence";
+            case OP_USERS:
+                return "users";
             case OP_JOIN:
                 return "join";
             case OP_LEAVE:
@@ -470,7 +488,7 @@ public class Xserv extends XservBase {
         return subscribe(topic, null);
     }
 
-    public String subscribe(String topic, JSONObject auth_endpoint) {
+    public String subscribe(String topic, JSONObject auth) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -479,8 +497,8 @@ public class Xserv extends XservBase {
             json.put("uuid", uuid);
             json.put("op", OP_SUBSCRIBE);
             json.put("topic", topic);
-            if (auth_endpoint != null) {
-                json.put("auth_endpoint", auth_endpoint);
+            if (auth != null) {
+                json.put("auth", auth);
             }
         } catch (JSONException e1) {
             e1.printStackTrace();
@@ -551,14 +569,14 @@ public class Xserv extends XservBase {
         return uuid;
     }
 
-    public String presence(String topic) {
+    public String users(String topic) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
-            json.put("op", OP_PRESENCE);
+            json.put("op", OP_USERS);
             json.put("topic", topic);
         } catch (JSONException e) {
             e.printStackTrace();
