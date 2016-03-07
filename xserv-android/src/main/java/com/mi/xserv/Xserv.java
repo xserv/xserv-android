@@ -56,10 +56,11 @@ public class Xserv extends XservBase {
     public final static int RC_NO_DATA = -5;
     public final static int RC_NOT_PRIVATE = -6;
     public final static int RC_LIMIT_MESSAGES = -7;
+    public final static int RC_DATA_ERROR = -8;
 
     private final static String TAG = "Xserv";
-    // private final static String HOST = "192.168.130.153";
-    private final static String HOST = "mobile-italia.com";
+    private final static String HOST = "192.168.130.187";
+    // private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
@@ -176,6 +177,23 @@ public class Xserv extends XservBase {
         }
 
         if (json != null) {
+            Object type = null;
+            try {
+                String data = json.getString("data");
+                byte[] b = Base64.decode(data, Base64.DEFAULT);
+                data = new String(b, "UTF-8");
+
+                type = new JSONTokener(data).nextValue();
+                if (type instanceof JSONObject) {
+                    json.put("data", new JSONObject(data));
+                } else if (type instanceof JSONArray) {
+                    json.put("data", new JSONArray(data));
+                } else {
+                    json.put("data", data);
+                }
+            } catch (JSONException | UnsupportedEncodingException ignored) {
+            }
+
             int op = 0;
             try {
                 op = json.getInt("op");
@@ -183,13 +201,14 @@ public class Xserv extends XservBase {
             }
 
             if (op == 0) {
+                // messages
+                onReceiveMessages(json);
+            } else if (op > 0) {
                 try {
-                    json.put("data", new JSONObject(json.getString("data")));
+                    json.put("name", stringifyOp(op));
                 } catch (JSONException ignored) {
                 }
 
-                onReceiveMessages(json);
-            } else if (op > 0) {
                 int rc = 0;
                 String topic = "";
                 String descr = "";
@@ -197,24 +216,17 @@ public class Xserv extends XservBase {
                     rc = json.getInt("rc");
                     topic = json.getString("topic");
                     descr = json.getString("descr");
-
-                    json.put("name", stringifyOp(op));
                 } catch (JSONException ignored) {
                 }
 
-                if (op == OP_HANDSHAKE) { // vera connection
+                if (op == OP_HANDSHAKE) {
+                    // handshake
                     if (rc == RC_OK) {
-                        try {
-                            String data = json.getString("data");
-                            byte[] b = Base64.decode(data, Base64.DEFAULT);
-                            String raw = new String(b, "UTF-8");
-                            Object j = new JSONTokener(raw).nextValue();
-                            if (j instanceof JSONObject) {
-                                JSONObject data_json = new JSONObject(raw);
-
-                                setUserData(data_json);
+                        if (type instanceof JSONObject) {
+                            try {
+                                setUserData(json.getJSONObject("data"));
+                            } catch (JSONException ignored) {
                             }
-                        } catch (JSONException | UnsupportedEncodingException ignored) {
                         }
 
                         if (mUserData.length() > 0) {
@@ -228,23 +240,42 @@ public class Xserv extends XservBase {
                         onErrorConnection(new Exception(descr));
                     }
                 } else {
-                    try {
-                        String data = json.getString("data");
-                        byte[] b = Base64.decode(data, Base64.DEFAULT);
-                        String raw = new String(b, "UTF-8");
-                        Object j = new JSONTokener(raw).nextValue();
-                        if (j instanceof JSONObject) {
-                            JSONObject data_json = new JSONObject(raw);
-                            json.put("data", data_json);
-
-                            // bind privata ok
-                            if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
-                                setUserData(data_json);
+                    // operations
+                    if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
+                        if (type instanceof JSONObject) {
+                            try {
+                                setUserData(json.getJSONObject("data"));
+                            } catch (JSONException ignored) {
                             }
-                        } else if (j instanceof JSONArray) {
-                            json.put("data", new JSONArray(raw));
                         }
-                    } catch (JSONException | UnsupportedEncodingException ignored) {
+                    } else if (op == OP_HISTORY && rc == RC_OK) {
+                        JSONArray list = null;
+                        try {
+                            list = json.getJSONArray("data");
+                        } catch (JSONException ignored) {
+                        }
+
+                        if (list != null) {
+                            for (int i = 0; i < list.length(); i++) {
+                                try {
+                                    JSONObject item = list.getJSONObject(i);
+
+                                    String data = item.getString("data");
+                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
+                                    data = new String(b, "UTF-8");
+
+                                    Object type2 = new JSONTokener(data).nextValue();
+                                    if (type2 instanceof JSONObject) {
+                                        item.put("data", new JSONObject(data));
+                                    } else if (type2 instanceof JSONArray) {
+                                        item.put("data", new JSONArray(data));
+                                    } else {
+                                        item.put("data", data);
+                                    }
+                                } catch (JSONException | UnsupportedEncodingException ignored) {
+                                }
+                            }
+                        }
                     }
 
                     onReceiveOpsResponse(json);
@@ -375,32 +406,24 @@ public class Xserv extends XservBase {
                     @Override
                     public void onCompleted(Exception e, AsyncHttpResponse source, JSONObject result) {
                         if (e == null) {
-                            JSONObject new_json = null;
+                            json.remove("auth");
+
+                            String user = "";
                             try {
-                                new_json = new JSONObject(json.toString()); // clone
-                                new_json.remove("auth");
+                                user = payload.getString("user");
+                            } catch (JSONException ignored) {
+                            }
+                            try {
+                                json.put("arg1", user);
+                                json.put("arg2", result.getString("data"));
+                                json.put("arg3", result.getString("sign"));
                             } catch (JSONException ignored) {
                             }
 
-                            if (new_json != null) {
-                                String user = "";
-                                try {
-                                    user = payload.getString("user");
-                                } catch (JSONException ignored) {
-                                }
-                                try {
-                                    new_json.put("arg1", user);
-                                    new_json.put("arg2", result.getString("data"));
-                                    new_json.put("arg3", result.getString("sign"));
-                                } catch (JSONException ignored) {
-                                }
-
-                                wsSend(new_json);
-                            } else {
-                                // like fail
-                                wsSend(json);
-                            }
+                            wsSend(json);
                         } else {
+                            json.remove("auth");
+
                             wsSend(json);
                         }
                     }
@@ -472,11 +495,19 @@ public class Xserv extends XservBase {
 
         String uuid = UUID.randomUUID().toString();
         JSONObject json = new JSONObject();
+
+        try {
+            byte[] b = data.getBytes("UTF-8");
+            data = Base64.encodeToString(b, Base64.DEFAULT);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         try {
             json.put("uuid", uuid);
             json.put("op", OP_PUBLISH);
             json.put("topic", topic);
             json.put("arg1", data);
+            json.put("arg2", data.length());
         } catch (JSONException e) {
             e.printStackTrace();
         }

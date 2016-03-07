@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
         mXserv = new Xserv(APP_ID);
         mXserv.setOnEventListener(this);
+        mXserv.disableTLS();
 
         mXserv.connect();
     }
@@ -144,7 +146,29 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnReceiveOpsResponse(JSONObject json) {
-        Log.d(TAG, "operation: " + json.toString());
+        Integer op = 0;
+        try {
+            op = json.getInt("op");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if (op == Xserv.OP_HISTORY) {
+            try {
+                JSONArray list = json.getJSONArray("data");
+                for (int i = 0; i < list.length(); i++) {
+                    JSONObject item = list.getJSONObject(i);
+                    Log.d(TAG, "message data: " + item.get("data"));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else if (op == Xserv.OP_PUBLISH) {
+            Log.d(TAG, "operation: " + json.toString());
+
+            // test history
+            mXserv.historyById(TOPIC, 0);
+        }
     }
 
 }
