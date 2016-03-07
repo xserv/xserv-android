@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
         mXserv = new Xserv(APP_ID);
         mXserv.setOnEventListener(this);
-        mXserv.disableTLS();
+        // mXserv.disableTLS();
 
         mXserv.connect();
     }
@@ -138,7 +138,11 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnReceiveMessages(final JSONObject json) {
-        Log.d(TAG, "message: " + json.toString());
+        try {
+            Log.d(TAG, "message data: " + json.get("data") + " " + json.get("data").getClass().getCanonicalName());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         mDataSource.add(0, json);
         mAdapter.notifyDataSetChanged();
@@ -146,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
     @Override
     public void OnReceiveOpsResponse(JSONObject json) {
-        Integer op = 0;
+        int op = 0;
         try {
             op = json.getInt("op");
         } catch (JSONException e) {
@@ -158,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
                 JSONArray list = json.getJSONArray("data");
                 for (int i = 0; i < list.length(); i++) {
                     JSONObject item = list.getJSONObject(i);
-                    Log.d(TAG, "message data: " + item.get("data"));
+                    Log.d(TAG, "history data: " + item.get("data") + " " + item.get("data").getClass().getCanonicalName());
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

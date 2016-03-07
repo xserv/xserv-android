@@ -181,17 +181,18 @@ public class Xserv extends XservBase {
             try {
                 String data = json.getString("data");
                 byte[] b = Base64.decode(data, Base64.DEFAULT);
-                data = new String(b, "UTF-8");
-
+                json.put("data", new String(b, "UTF-8")); // string
+            } catch (JSONException | UnsupportedEncodingException ignored) {
+            }
+            try {
+                String data = json.getString("data");
                 type = new JSONTokener(data).nextValue();
                 if (type instanceof JSONObject) {
                     json.put("data", new JSONObject(data));
                 } else if (type instanceof JSONArray) {
                     json.put("data", new JSONArray(data));
-                } else {
-                    json.put("data", data);
                 }
-            } catch (JSONException | UnsupportedEncodingException ignored) {
+            } catch (JSONException ignored) {
             }
 
             int op = 0;
@@ -257,22 +258,26 @@ public class Xserv extends XservBase {
 
                         if (list != null) {
                             for (int i = 0; i < list.length(); i++) {
+                                JSONObject item = null;
                                 try {
-                                    JSONObject item = list.getJSONObject(i);
+                                    item = list.getJSONObject(i);
 
                                     String data = item.getString("data");
                                     byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                    data = new String(b, "UTF-8");
-
-                                    Object type2 = new JSONTokener(data).nextValue();
-                                    if (type2 instanceof JSONObject) {
-                                        item.put("data", new JSONObject(data));
-                                    } else if (type2 instanceof JSONArray) {
-                                        item.put("data", new JSONArray(data));
-                                    } else {
-                                        item.put("data", data);
-                                    }
+                                    item.put("data", new String(b, "UTF-8")); // string
                                 } catch (JSONException | UnsupportedEncodingException ignored) {
+                                }
+                                if (item != null) {
+                                    try {
+                                        String data = item.getString("data");
+                                        Object type2 = new JSONTokener(data).nextValue();
+                                        if (type2 instanceof JSONObject) {
+                                            item.put("data", new JSONObject(data));
+                                        } else if (type2 instanceof JSONArray) {
+                                            item.put("data", new JSONArray(data));
+                                        }
+                                    } catch (JSONException ignored) {
+                                    }
                                 }
                             }
                         }
