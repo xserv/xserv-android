@@ -507,7 +507,7 @@ public class Xserv extends XservBase {
             json.put("op", OP_PUBLISH);
             json.put("topic", topic);
             json.put("arg1", data);
-            json.put("arg2", data.length());
+            json.put("arg2", String.valueOf(data.length()));
         } catch (JSONException e) {
             e.printStackTrace();
         }

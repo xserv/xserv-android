@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
             Log.d(TAG, "operation: " + json.toString());
 
             // test history
-            mXserv.historyById(TOPIC, 0);
+            // mXserv.historyById(TOPIC, 0);
         }
     }
 
