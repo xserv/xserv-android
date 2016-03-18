@@ -22,5 +22,5 @@ public interface OnXservEventListener {
 
     void OnReceiveMessages(JSONObject json);
 
-    void OnReceiveOpsResponse(JSONObject json);
+    void OnReceiveOperations(JSONObject json);
 }

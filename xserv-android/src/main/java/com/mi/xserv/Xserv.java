@@ -59,8 +59,8 @@ public class Xserv extends XservBase {
     public final static int RC_DATA_ERROR = -8;
 
     private final static String TAG = "Xserv";
-    private final static String HOST = "192.168.130.187";
-    // private final static String HOST = "mobile-italia.com";
+    // private final static String HOST = "192.168.130.187";
+    private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
@@ -283,7 +283,7 @@ public class Xserv extends XservBase {
                         }
                     }
 
-                    onReceiveOpsResponse(json);
+                    OnReceiveOperations(json);
                 }
             }
         }
@@ -492,10 +492,18 @@ public class Xserv extends XservBase {
     }
 
     public String publish(String topic, JSONObject data) {
-        return publish(topic, data.toString());
+        return publish(topic, data, null);
     }
 
     public String publish(String topic, String data) {
+        return publish(topic, data, null);
+    }
+
+    public String publish(String topic, JSONObject data, OnCompletionListener listener) {
+        return publish(topic, data.toString(), listener);
+    }
+
+    public String publish(String topic, String data, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -521,10 +529,18 @@ public class Xserv extends XservBase {
     }
 
     public String subscribe(String topic) {
-        return subscribe(topic, null);
+        return subscribe(topic, null, null);
+    }
+
+    public String subscribe(String topic, OnCompletionListener listener) {
+        return subscribe(topic, null, listener);
     }
 
     public String subscribe(String topic, JSONObject auth) {
+        return subscribe(topic, auth, null);
+    }
+
+    public String subscribe(String topic, JSONObject auth, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -544,6 +560,10 @@ public class Xserv extends XservBase {
     }
 
     public String unsubscribe(String topic) {
+        return unsubscribe(topic, null);
+    }
+
+    public String unsubscribe(String topic, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -559,11 +579,11 @@ public class Xserv extends XservBase {
         return uuid;
     }
 
-    public String historyById(String topic, Integer offset) {
-        return historyById(topic, offset, 0);
+    public String historyById(String topic, Integer offset, Integer limit) {
+        return historyById(topic, offset, limit, null);
     }
 
-    public String historyById(String topic, Integer offset, Integer limit) {
+    public String historyById(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -582,11 +602,11 @@ public class Xserv extends XservBase {
         return uuid;
     }
 
-    public String historyByTimestamp(String topic, Integer offset) {
-        return historyByTimestamp(topic, offset, 0);
+    public String historyByTimestamp(String topic, Integer offset, Integer limit) {
+        return historyByTimestamp(topic, offset, limit, null);
     }
 
-    public String historyByTimestamp(String topic, Integer offset, Integer limit) {
+    public String historyByTimestamp(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -606,6 +626,10 @@ public class Xserv extends XservBase {
     }
 
     public String users(String topic) {
+        return users(topic, null);
+    }
+
+    public String users(String topic, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -622,6 +646,10 @@ public class Xserv extends XservBase {
     }
 
     public String topics() {
+        return topics(null);
+    }
+
+    public String topics(OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -634,6 +662,12 @@ public class Xserv extends XservBase {
         }
         send(json);
         return uuid;
+    }
+
+    public interface OnCompletionListener {
+
+        void onCompletion(JSONObject json);
+
     }
 
 }

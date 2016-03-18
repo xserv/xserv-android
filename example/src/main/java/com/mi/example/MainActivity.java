@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
     }
 
     @Override
-    public void OnReceiveOpsResponse(JSONObject json) {
+    public void OnReceiveOperations(JSONObject json) {
         int op = 0;
         try {
             op = json.getInt("op");
