@@ -88,6 +88,14 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
 
                     if (message.length() > 0) {
                         mXserv.publish(TOPIC, message);
+
+                        /*mXserv.publish(TOPIC, message, new Xserv.OnCompletionListener() {
+                            @Override
+                            public void onCompletion(JSONObject json) {
+
+                            }
+                        });*/
+
                         // mXserv.publish(TOPIC_PRIVATE, message);
 
                         editText.setText("");
