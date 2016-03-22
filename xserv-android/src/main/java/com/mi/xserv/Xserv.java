@@ -59,8 +59,8 @@ public class Xserv extends XservBase {
     public final static int RC_DATA_ERROR = -8;
 
     private final static String TAG = "Xserv";
-    // private final static String HOST = "192.168.130.187";
-    private final static String HOST = "mobile-italia.com";
+    private final static String HOST = "192.168.130.187";
+    // private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
@@ -579,11 +579,11 @@ public class Xserv extends XservBase {
         return uuid;
     }
 
-    public String historyById(String topic, Integer offset, Integer limit) {
-        return historyById(topic, offset, limit, null);
+    public String history(String topic, Integer offset, Integer limit) {
+        return history(topic, offset, limit, null);
     }
 
-    public String historyById(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
+    public String history(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
@@ -592,32 +592,8 @@ public class Xserv extends XservBase {
             json.put("uuid", uuid);
             json.put("op", OP_HISTORY);
             json.put("topic", topic);
-            json.put("arg1", HISTORY_ID);
-            json.put("arg2", String.valueOf(offset));
-            json.put("arg3", String.valueOf(limit));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        send(json);
-        return uuid;
-    }
-
-    public String historyByTimestamp(String topic, Integer offset, Integer limit) {
-        return historyByTimestamp(topic, offset, limit, null);
-    }
-
-    public String historyByTimestamp(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
-        if (!isConnected()) return "";
-
-        String uuid = UUID.randomUUID().toString();
-        JSONObject json = new JSONObject();
-        try {
-            json.put("uuid", uuid);
-            json.put("op", OP_HISTORY);
-            json.put("topic", topic);
-            json.put("arg1", HISTORY_TIMESTAMP);
-            json.put("arg2", String.valueOf(offset));
-            json.put("arg3", String.valueOf(limit));
+            json.put("arg1", String.valueOf(offset));
+            json.put("arg2", String.valueOf(limit));
         } catch (JSONException e) {
             e.printStackTrace();
         }

@@ -107,8 +107,9 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         });
 
         mXserv = new Xserv(APP_ID);
-        mXserv.setOnEventListener(this);
         // mXserv.disableTLS();
+
+        mXserv.setOnEventListener(this);
 
         mXserv.connect();
     }
