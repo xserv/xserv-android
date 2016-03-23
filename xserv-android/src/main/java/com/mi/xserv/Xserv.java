@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -59,14 +60,15 @@ public class Xserv extends XservBase {
     public final static int RC_DATA_ERROR = -8;
 
     private final static String TAG = "Xserv";
-    private final static String HOST = "192.168.130.187";
-    // private final static String HOST = "mobile-italia.com";
+    // private final static String HOST = "192.168.130.187";
+    private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
     private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/app/%4$s/auth_user";
     private final static int DEFAULT_RI = 5000;
-
+    // callbacks
+    private static HashMap<String, OnCompletionListener> mCallbacks;
     // attributes
     private String mAppId;
     private Future<WebSocket> mConn;
@@ -94,6 +96,9 @@ public class Xserv extends XservBase {
 
         // TLS
         isSecure = true;
+
+        // Callbacks
+        mCallbacks = new HashMap<>();
     }
 
     public static boolean isPrivateTopic(String topic) {
@@ -125,6 +130,8 @@ public class Xserv extends XservBase {
                 port = TLS_PORT;
             }
 
+            mCallbacks.clear();
+
             AsyncHttpClient as = getWebSocketClient(isSecure);
             mConn = as.websocket(String.format(
                             URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
@@ -137,6 +144,8 @@ public class Xserv extends XservBase {
 
                                 handshake();
                             } else {
+                                mCallbacks.clear();
+
                                 onErrorConnection(e);
 
                                 // eccezione, error socket in connection non e' la error
@@ -153,6 +162,8 @@ public class Xserv extends XservBase {
             @Override
             public void onCompleted(Exception e) {
                 isConnected = false;
+
+                mCallbacks.clear();
 
                 onCloseConnection(e);
 
@@ -177,24 +188,6 @@ public class Xserv extends XservBase {
         }
 
         if (json != null) {
-            Object type = null;
-            try {
-                String data = json.getString("data");
-                byte[] b = Base64.decode(data, Base64.DEFAULT);
-                json.put("data", new String(b, "UTF-8")); // string
-            } catch (JSONException | UnsupportedEncodingException ignored) {
-            }
-            try {
-                String data = json.getString("data");
-                type = new JSONTokener(data).nextValue();
-                if (type instanceof JSONObject) {
-                    json.put("data", new JSONObject(data));
-                } else if (type instanceof JSONArray) {
-                    json.put("data", new JSONArray(data));
-                }
-            } catch (JSONException ignored) {
-            }
-
             int op = 0;
             try {
                 op = json.getInt("op");
@@ -203,18 +196,53 @@ public class Xserv extends XservBase {
 
             if (op == 0) {
                 // messages
+
+                try {
+                    String data = json.getString("data");
+                    Object type = new JSONTokener(data).nextValue();
+                    if (type instanceof JSONObject) {
+                        json.put("data", new JSONObject(data));
+                    } else if (type instanceof JSONArray) {
+                        json.put("data", new JSONArray(data));
+                    }
+                } catch (JSONException ignored) {
+                }
+
                 onReceiveMessages(json);
             } else if (op > 0) {
+                // operations
+
+                try {
+                    String data = json.getString("data");
+                    byte[] b = Base64.decode(data, Base64.DEFAULT);
+                    json.put("data", new String(b, "UTF-8")); // string
+                } catch (JSONException | UnsupportedEncodingException ignored) {
+                }
+
+                Object type = null;
+                try {
+                    String data = json.getString("data");
+                    type = new JSONTokener(data).nextValue();
+                    if (type instanceof JSONObject) {
+                        json.put("data", new JSONObject(data));
+                    } else if (type instanceof JSONArray) {
+                        json.put("data", new JSONArray(data));
+                    }
+                } catch (JSONException ignored) {
+                }
+
                 try {
                     json.put("name", stringifyOp(op));
                 } catch (JSONException ignored) {
                 }
 
                 int rc = 0;
+                String uuid = "";
                 String topic = "";
                 String descr = "";
                 try {
                     rc = json.getInt("rc");
+                    uuid = json.getString("uuid");
                     topic = json.getString("topic");
                     descr = json.getString("descr");
                 } catch (JSONException ignored) {
@@ -222,6 +250,7 @@ public class Xserv extends XservBase {
 
                 if (op == OP_HANDSHAKE) {
                     // handshake
+
                     if (rc == RC_OK) {
                         if (type instanceof JSONObject) {
                             try {
@@ -235,13 +264,18 @@ public class Xserv extends XservBase {
 
                             onOpenConnection();
                         } else {
+                            mCallbacks.clear();
+
                             onErrorConnection(new Exception(descr));
                         }
                     } else {
+                        mCallbacks.clear();
+
                         onErrorConnection(new Exception(descr));
                     }
                 } else {
-                    // operations
+                    // classic operations
+
                     if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
                         if (type instanceof JSONObject) {
                             try {
@@ -261,11 +295,7 @@ public class Xserv extends XservBase {
                                 JSONObject item = null;
                                 try {
                                     item = list.getJSONObject(i);
-
-                                    String data = item.getString("data");
-                                    byte[] b = Base64.decode(data, Base64.DEFAULT);
-                                    item.put("data", new String(b, "UTF-8")); // string
-                                } catch (JSONException | UnsupportedEncodingException ignored) {
+                                } catch (JSONException ignored) {
                                 }
                                 if (item != null) {
                                     try {
@@ -283,7 +313,12 @@ public class Xserv extends XservBase {
                         }
                     }
 
-                    OnReceiveOperations(json);
+                    if (mCallbacks.get(uuid) != null) {
+                        mCallbacks.get(uuid).onCompletion(json);
+                        mCallbacks.remove(uuid);
+                    } else {
+                        OnReceiveOperations(json);
+                    }
                 }
             }
         }
@@ -491,36 +526,23 @@ public class Xserv extends XservBase {
         return "";
     }
 
-    public String publish(String topic, JSONObject data) {
+    public String publish(String topic, Object data) {
         return publish(topic, data, null);
     }
 
-    public String publish(String topic, String data) {
-        return publish(topic, data, null);
-    }
-
-    public String publish(String topic, JSONObject data, OnCompletionListener listener) {
-        return publish(topic, data.toString(), listener);
-    }
-
-    public String publish(String topic, String data, OnCompletionListener listener) {
+    public String publish(String topic, Object data, OnCompletionListener listener) {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
-        JSONObject json = new JSONObject();
-
-        try {
-            byte[] b = data.getBytes("UTF-8");
-            data = Base64.encodeToString(b, Base64.DEFAULT);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
         }
+        JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
             json.put("op", OP_PUBLISH);
             json.put("topic", topic);
             json.put("arg1", data);
-            json.put("arg2", String.valueOf(data.length()));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -544,6 +566,9 @@ public class Xserv extends XservBase {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
@@ -567,6 +592,9 @@ public class Xserv extends XservBase {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
@@ -587,6 +615,9 @@ public class Xserv extends XservBase {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
@@ -609,6 +640,9 @@ public class Xserv extends XservBase {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
@@ -629,6 +663,9 @@ public class Xserv extends XservBase {
         if (!isConnected()) return "";
 
         String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
         JSONObject json = new JSONObject();
         try {
             json.put("uuid", uuid);
@@ -643,6 +680,20 @@ public class Xserv extends XservBase {
     public interface OnCompletionListener {
 
         void onCompletion(JSONObject json);
+
+    }
+
+    public interface OnXservEventListener {
+
+        void OnOpenConnection();
+
+        void OnCloseConnection(Exception e);
+
+        void OnErrorConnection(Exception e);
+
+        void OnReceiveMessages(JSONObject json);
+
+        void OnReceiveOperations(JSONObject json);
 
     }
 

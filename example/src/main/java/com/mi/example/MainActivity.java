@@ -13,16 +13,16 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.mi.xserv.OnXservEventListener;
 import com.mi.xserv.Xserv;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements OnXservEventListener {
+public class MainActivity extends AppCompatActivity implements Xserv.OnXservEventListener {
     private final static String TAG = "Example";
     private final static String APP_ID = "9Pf80-3";
     private final static String TOPIC = "milano";
@@ -86,8 +86,19 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
                 if (actionId == EditorInfo.IME_ACTION_SEND) {
                     String message = editText.getText().toString();
 
+                    Object data = message;
+                    try {
+                        Object type = new JSONTokener(message).nextValue();
+                        if (type instanceof JSONObject) {
+                            data = new JSONObject(message);
+                        } else if (type instanceof JSONArray) {
+                            data = new JSONArray(message);
+                        }
+                    } catch (JSONException ignored) {
+                    }
+
                     if (message.length() > 0) {
-                        mXserv.publish(TOPIC, message);
+                        mXserv.publish(TOPIC, data);
 
                         /*mXserv.publish(TOPIC, message, new Xserv.OnCompletionListener() {
                             @Override
@@ -179,8 +190,17 @@ public class MainActivity extends AppCompatActivity implements OnXservEventListe
         } else if (op == Xserv.OP_PUBLISH) {
             Log.d(TAG, "operation: " + json.toString());
 
-            // test history
-            // mXserv.historyById(TOPIC, 0);
+            // ex history without callback event on OnReceiveOperations
+            mXserv.history(TOPIC, 0, 100);
+
+            // ex. history with callback no event on OnReceiveOperations
+
+            /*mXserv.history(TOPIC, 0, 100, new Xserv.OnCompletionListener() {
+                @Override
+                public void onCompletion(JSONObject json) {
+                    Log.d(TAG, json.toString());
+                }
+            });*/
         }
     }
 

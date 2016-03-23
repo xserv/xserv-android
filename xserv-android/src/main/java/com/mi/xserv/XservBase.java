@@ -40,7 +40,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class XservBase {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private WeakReference<OnXservEventListener> mDelegate;
+    private WeakReference<Xserv.OnXservEventListener> mDelegate;
     private TrustManagerFactory mTmf;
     private SSLContext mSSLContext;
 
@@ -48,7 +48,7 @@ public class XservBase {
         mDelegate = new WeakReference<>(null);
     }
 
-    public void setOnEventListener(OnXservEventListener onEventListener) {
+    public void setOnEventListener(Xserv.OnXservEventListener onEventListener) {
         mDelegate = new WeakReference<>(onEventListener);
     }
 
@@ -57,7 +57,7 @@ public class XservBase {
     }
 
     private void fixAuthority() {
-        OnXservEventListener delegate = mDelegate.get();
+        Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null && (mTmf == null || mSSLContext == null)) {
             try {
@@ -119,7 +119,7 @@ public class XservBase {
     }
 
     protected String getDeviceID() {
-        OnXservEventListener delegate = mDelegate.get();
+        Xserv.OnXservEventListener delegate = mDelegate.get();
 
         String deviceID = null;
         if (delegate != null) {
@@ -160,7 +160,7 @@ public class XservBase {
     }
 
     protected void onOpenConnection() {
-        final OnXservEventListener delegate = mDelegate.get();
+        final Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
             mHandler.post(new Runnable() {
@@ -174,7 +174,7 @@ public class XservBase {
     }
 
     protected void onCloseConnection(final Exception e) {
-        final OnXservEventListener delegate = mDelegate.get();
+        final Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
             mHandler.post(new Runnable() {
@@ -188,7 +188,7 @@ public class XservBase {
     }
 
     protected void onErrorConnection(final Exception e) {
-        final OnXservEventListener delegate = mDelegate.get();
+        final Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
             mHandler.post(new Runnable() {
@@ -202,7 +202,7 @@ public class XservBase {
     }
 
     protected void onReceiveMessages(final JSONObject json) {
-        final OnXservEventListener delegate = mDelegate.get();
+        final Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
             mHandler.post(new Runnable() {
@@ -216,7 +216,7 @@ public class XservBase {
     }
 
     protected void OnReceiveOperations(final JSONObject json) {
-        final OnXservEventListener delegate = mDelegate.get();
+        final Xserv.OnXservEventListener delegate = mDelegate.get();
 
         if (delegate != null) {
             mHandler.post(new Runnable() {
