@@ -197,17 +197,6 @@ public class Xserv extends XservBase {
             if (op == 0) {
                 // messages
 
-                try {
-                    String data = json.getString("data");
-                    Object type = new JSONTokener(data).nextValue();
-                    if (type instanceof JSONObject) {
-                        json.put("data", new JSONObject(data));
-                    } else if (type instanceof JSONArray) {
-                        json.put("data", new JSONArray(data));
-                    }
-                } catch (JSONException ignored) {
-                }
-
                 onReceiveMessages(json);
             } else if (op > 0) {
                 // operations
@@ -219,12 +208,14 @@ public class Xserv extends XservBase {
                 } catch (JSONException | UnsupportedEncodingException ignored) {
                 }
 
-                Object type = null;
+                JSONObject json_data = null;
                 try {
                     String data = json.getString("data");
-                    type = new JSONTokener(data).nextValue();
+                    Object type = new JSONTokener(data).nextValue();
                     if (type instanceof JSONObject) {
-                        json.put("data", new JSONObject(data));
+                        json_data = new JSONObject(data);
+
+                        json.put("data", json_data);
                     } else if (type instanceof JSONArray) {
                         json.put("data", new JSONArray(data));
                     }
@@ -252,14 +243,9 @@ public class Xserv extends XservBase {
                     // handshake
 
                     if (rc == RC_OK) {
-                        if (type instanceof JSONObject) {
-                            try {
-                                setUserData(json.getJSONObject("data"));
-                            } catch (JSONException ignored) {
-                            }
-                        }
+                        if (json_data != null) {
+                            setUserData(json_data);
 
-                        if (mUserData.length() > 0) {
                             isConnected = true;
 
                             onOpenConnection();
@@ -277,39 +263,8 @@ public class Xserv extends XservBase {
                     // classic operations
 
                     if (op == OP_SUBSCRIBE && isPrivateTopic(topic) && rc == RC_OK) {
-                        if (type instanceof JSONObject) {
-                            try {
-                                setUserData(json.getJSONObject("data"));
-                            } catch (JSONException ignored) {
-                            }
-                        }
-                    } else if (op == OP_HISTORY && rc == RC_OK) {
-                        JSONArray list = null;
-                        try {
-                            list = json.getJSONArray("data");
-                        } catch (JSONException ignored) {
-                        }
-
-                        if (list != null) {
-                            for (int i = 0; i < list.length(); i++) {
-                                JSONObject item = null;
-                                try {
-                                    item = list.getJSONObject(i);
-                                } catch (JSONException ignored) {
-                                }
-                                if (item != null) {
-                                    try {
-                                        String data = item.getString("data");
-                                        Object type2 = new JSONTokener(data).nextValue();
-                                        if (type2 instanceof JSONObject) {
-                                            item.put("data", new JSONObject(data));
-                                        } else if (type2 instanceof JSONArray) {
-                                            item.put("data", new JSONArray(data));
-                                        }
-                                    } catch (JSONException ignored) {
-                                    }
-                                }
-                            }
+                        if (json_data != null) {
+                            setUserData(json_data);
                         }
                     }
 
