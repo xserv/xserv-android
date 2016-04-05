@@ -57,7 +57,7 @@ public class Xserv extends XservBase {
     public final static int RC_NO_DATA = -5;
     public final static int RC_NOT_PRIVATE = -6;
     public final static int RC_LIMIT_MESSAGES = -7;
-    public final static int RC_DATA_ERROR = -8;
+    public final static int RC_DB_ERROR = -8;
 
     private final static String TAG = "Xserv";
     // private final static String HOST = "192.168.130.187";
@@ -280,7 +280,7 @@ public class Xserv extends XservBase {
     }
 
     private void reConnect() {
-        if (isAutoReconnect) {
+        if (isAutoReconnect && mReconnectInterval > 0) {
             getMainLooper().postDelayed(new Runnable() {
 
                 @Override
