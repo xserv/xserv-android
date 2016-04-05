@@ -15,20 +15,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 
-import com.koushikdutta.async.http.AsyncHttpClient;
-
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -54,68 +43,6 @@ public class XservBase {
 
     protected Handler getMainLooper() {
         return mHandler;
-    }
-
-    private void fixAuthority() {
-        Xserv.OnXservEventListener delegate = mDelegate.get();
-
-        if (delegate != null && (mTmf == null || mSSLContext == null)) {
-            try {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                InputStream caInput = ((Context) delegate).getResources().openRawResource(R.raw.lets_encrypt_x1_cross_signed_pem);
-                Certificate ca = cf.generateCertificate(caInput);
-                caInput.close();
-
-                // Create a KeyStore containing our trusted CAs
-                String keyStoreType = KeyStore.getDefaultType();
-                KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-                keyStore.load(null, null);
-                keyStore.setCertificateEntry("ca", ca);
-
-                // Create a TrustManager that trusts the CAs in our KeyStore
-                String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-                mTmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-                mTmf.init(keyStore);
-
-                // Create an SSLContext that uses our TrustManager
-                mSSLContext = SSLContext.getInstance("TLS");
-                mSSLContext.init(null, mTmf.getTrustManagers(), null);
-            } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException |
-                    KeyManagementException | IOException e) {
-
-                e.printStackTrace();
-            }
-        }
-    }
-
-    protected AsyncHttpClient getWebSocketClient(boolean securiry) {
-        AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-
-        if (securiry) {
-            fixAuthority();
-
-            if (mTmf != null && mSSLContext != null) {
-                as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
-                as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
-            }
-        }
-
-        return as;
-    }
-
-    protected AsyncHttpClient getHttpClient(String url) {
-        AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-
-        if (url.startsWith("https://mobile-italia.com")) {
-            fixAuthority();
-
-            if (mTmf != null && mSSLContext != null) {
-                as.getSSLSocketMiddleware().setTrustManagers(mTmf.getTrustManagers());
-                as.getSSLSocketMiddleware().setSSLContext(mSSLContext);
-            }
-        }
-
-        return as;
     }
 
     protected String getDeviceID() {

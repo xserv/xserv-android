@@ -132,7 +132,7 @@ public class Xserv extends XservBase {
 
             mCallbacks.clear();
 
-            AsyncHttpClient as = getWebSocketClient(isSecure);
+            AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(
                             URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
@@ -363,7 +363,7 @@ public class Xserv extends XservBase {
                 } catch (JSONException ignored) {
                 }
 
-                AsyncHttpClient as = getHttpClient(endpoint);
+                AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
                 AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "POST");
 
                 // add custom headers

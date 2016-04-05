@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     private final static String TAG = "Example";
     private final static String APP_ID = "9Pf80-3";
     private final static String TOPIC = "milano";
-    private final static String TOPIC_PRIVATE = "@milano";
+    // private final static String TOPIC_PRIVATE = "@milano";
     private Xserv mXserv;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
