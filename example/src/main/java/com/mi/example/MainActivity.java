@@ -66,7 +66,9 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
+        if (mRecyclerView != null) {
+            mRecyclerView.setHasFixedSize(true);
+        }
 
         // use a linear layout manager
         mLayoutManager = new LinearLayoutManager(this);
@@ -79,43 +81,37 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         mRecyclerView.setAdapter(mAdapter);
 
         final EditText editText = (EditText) findViewById(R.id.editText);
-        editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                boolean handled = false;
-                if (actionId == EditorInfo.IME_ACTION_SEND) {
-                    String message = editText.getText().toString();
+        if (editText != null) {
+            editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                @Override
+                public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                    boolean handled = false;
+                    if (actionId == EditorInfo.IME_ACTION_SEND) {
+                        String message = editText.getText().toString();
 
-                    Object data = message;
-                    try {
-                        Object type = new JSONTokener(message).nextValue();
-                        if (type instanceof JSONObject) {
-                            data = new JSONObject(message);
-                        } else if (type instanceof JSONArray) {
-                            data = new JSONArray(message);
-                        }
-                    } catch (JSONException ignored) {
-                    }
-
-                    if (message.length() > 0) {
-                        mXserv.publish(TOPIC, data);
-
-                        /*mXserv.publish(TOPIC, message, new Xserv.OnCompletionListener() {
-                            @Override
-                            public void onCompletion(JSONObject json) {
-
+                        Object data = message;
+                        try {
+                            Object type = new JSONTokener(message).nextValue();
+                            if (type instanceof JSONObject) {
+                                data = new JSONObject(message);
+                            } else if (type instanceof JSONArray) {
+                                data = new JSONArray(message);
                             }
-                        });*/
+                        } catch (JSONException ignored) {
+                        }
 
-                        // mXserv.publish(TOPIC_PRIVATE, message);
+                        if (message.length() > 0) {
+                            mXserv.publish(TOPIC, data);
+                            //mXserv.publish(TOPIC_PRIVATE, data);
 
-                        editText.setText("");
+                            editText.setText("");
+                        }
+                        handled = true;
                     }
-                    handled = true;
+                    return handled;
                 }
-                return handled;
-            }
-        });
+            });
+        }
 
         mXserv = new Xserv(APP_ID);
         // mXserv.disableTLS();
@@ -173,11 +169,13 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         int op = 0;
         try {
             op = json.getInt("op");
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
         }
 
-        if (op == Xserv.OP_HISTORY) {
+        if (op == Xserv.OP_SUBSCRIBE) {
+            Log.d(TAG, "subscribe: " + json.toString());
+        } else if (op == Xserv.OP_HISTORY) {
             try {
                 JSONArray list = json.getJSONArray("data");
                 for (int i = 0; i < list.length(); i++) {
@@ -190,17 +188,18 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         } else if (op == Xserv.OP_PUBLISH) {
             Log.d(TAG, "operation: " + json.toString());
 
-            // ex history without callback event on OnReceiveOperations
-            mXserv.history(TOPIC, 0, 100);
+            JSONObject params = new JSONObject();
+            try {
+                params.put("offset", 0);
+                params.put("limit", 1000);
 
-            // ex. history with callback no event on OnReceiveOperations
+                //JSONObject query = new JSONObject();
+                //query.put("data.n", 2);
+                //params.put("query", query);
+            } catch (JSONException ignored) {
+            }
 
-            /*mXserv.history(TOPIC, 0, 100, new Xserv.OnCompletionListener() {
-                @Override
-                public void onCompletion(JSONObject json) {
-                    Log.d(TAG, json.toString());
-                }
-            });*/
+            mXserv.history(TOPIC, params);
         }
     }
 

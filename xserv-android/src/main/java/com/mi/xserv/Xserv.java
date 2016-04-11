@@ -19,7 +19,6 @@ import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.AsyncHttpRequest;
 import com.koushikdutta.async.http.AsyncHttpResponse;
 import com.koushikdutta.async.http.WebSocket;
-import com.koushikdutta.async.http.body.JSONObjectBody;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,6 +26,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
@@ -42,11 +42,9 @@ public class Xserv extends XservBase {
     public final static int OP_HISTORY = 203;
     public final static int OP_USERS = 204;
     public final static int OP_TOPICS = 205;
+    public final static int OP_UPDATE = 300;
     public final static int OP_JOIN = 401;
     public final static int OP_LEAVE = 402;
-    // in uso in history
-    public final static String HISTORY_ID = "id";
-    public final static String HISTORY_TIMESTAMP = "timestamp";
     // op result_code
     public final static int RC_OK = 1;
     public final static int RC_GENERIC_ERROR = 0;
@@ -65,7 +63,7 @@ public class Xserv extends XservBase {
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
-    private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/app/%4$s/auth_user";
+    private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/user";
     private final static int DEFAULT_RI = 5000;
     // callbacks
     private static HashMap<String, OnCompletionListener> mCallbacks;
@@ -134,7 +132,7 @@ public class Xserv extends XservBase {
 
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(
-                            URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
+                    URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
 
                         @Override
@@ -357,14 +355,54 @@ public class Xserv extends XservBase {
                     port = TLS_PORT;
                 }
 
-                String endpoint = String.format(DEFAULT_AUTH_URL, protocol, HOST, port, mAppId);
+                // add url encode params
+                String url_encode = "";
+                String user = "";
+                try {
+                    JSONObject params = auth.getJSONObject("params");
+                    Iterator<?> keys = params.keys();
+                    while (keys.hasNext()) {
+                        if (url_encode.length() == 0) {
+                            url_encode += "?";
+                        } else {
+                            url_encode += "&";
+                        }
+
+                        String name = (String) keys.next();
+                        String value = (String) params.get(name);
+                        if (name.equals("user")) {
+                            user = value;
+                        }
+                        try {
+                            url_encode += name + "=" + URLEncoder.encode(value, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    try {
+                        if (url_encode.length() == 0) {
+                            url_encode += "?";
+                        } else {
+                            url_encode += "&";
+                        }
+                        url_encode += "socket_id=" + URLEncoder.encode(getSocketId(), "UTF-8") +
+                                "&topic=" + URLEncoder.encode(topic, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                } catch (JSONException ignored) {
+                }
+
+                String endpoint = String.format(DEFAULT_AUTH_URL, protocol, HOST, port);
                 try {
                     endpoint = auth.getString("endpoint");
                 } catch (JSONException ignored) {
                 }
 
-                AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
-                AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "POST");
+                endpoint += url_encode;
+
+                AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "GET");
 
                 // add custom headers
                 try {
@@ -376,40 +414,19 @@ public class Xserv extends XservBase {
                     }
                 } catch (JSONException ignored) {
                 }
+                request.setHeader("X-Xserv-AppId", mAppId);
 
-                final JSONObject payload = new JSONObject();
-                try {
-                    payload.put("socket_id", getSocketId());
-                    payload.put("topic", topic);
-                } catch (JSONException ignored) {
-                }
+                final String userStatic = user;
 
-                // add custom params payload
-                try {
-                    JSONObject params = auth.getJSONObject("params");
-                    Iterator<?> keys = params.keys();
-                    while (keys.hasNext()) {
-                        String key = (String) keys.next();
-                        payload.put(key, params.get(key));
-                    }
-                } catch (JSONException ignored) {
-                }
-
-                request.setBody(new JSONObjectBody(payload));
-
+                AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
                 as.executeJSONObject(request, new AsyncHttpClient.JSONObjectCallback() {
                     @Override
                     public void onCompleted(Exception e, AsyncHttpResponse source, JSONObject result) {
                         if (e == null) {
                             json.remove("auth");
 
-                            String user = "";
                             try {
-                                user = payload.getString("user");
-                            } catch (JSONException ignored) {
-                            }
-                            try {
-                                json.put("arg1", user);
+                                json.put("arg1", userStatic);
                                 json.put("arg2", result.getString("data"));
                                 json.put("arg3", result.getString("sign"));
                             } catch (JSONException ignored) {
@@ -477,6 +494,8 @@ public class Xserv extends XservBase {
                 return "handshake";
             case OP_TOPICS:
                 return "topics";
+            case OP_UPDATE:
+                return "update";
         }
         return "";
     }
@@ -498,6 +517,31 @@ public class Xserv extends XservBase {
             json.put("op", OP_PUBLISH);
             json.put("topic", topic);
             json.put("arg1", data);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        send(json);
+        return uuid;
+    }
+
+    public String update(String topic, String object_id, Object data) {
+        return update(topic, object_id, data, null);
+    }
+
+    public String update(String topic, String object_id, Object data, OnCompletionListener listener) {
+        if (!isConnected()) return "";
+
+        String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
+        JSONObject json = new JSONObject();
+        try {
+            json.put("uuid", uuid);
+            json.put("op", OP_UPDATE);
+            json.put("topic", topic);
+            json.put("arg1", data);
+            json.put("arg2", object_id);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -562,12 +606,30 @@ public class Xserv extends XservBase {
         return uuid;
     }
 
-    public String history(String topic, Integer offset, Integer limit) {
-        return history(topic, offset, limit, null);
+    public String history(String topic, JSONObject params) {
+        return history(topic, params, null);
     }
 
-    public String history(String topic, Integer offset, Integer limit, OnCompletionListener listener) {
+    public String history(String topic, JSONObject params, OnCompletionListener listener) {
         if (!isConnected()) return "";
+
+        int offset = 0;
+        int limit = 0;
+        JSONObject query = null;
+        if (params != null) {
+            try {
+                offset = params.getInt("offset");
+            } catch (JSONException ignored) {
+            }
+            try {
+                limit = params.getInt("limit");
+            } catch (JSONException ignored) {
+            }
+            try {
+                query = params.getJSONObject("query");
+            } catch (JSONException ignored) {
+            }
+        }
 
         String uuid = UUID.randomUUID().toString();
         if (listener != null) {
@@ -580,6 +642,11 @@ public class Xserv extends XservBase {
             json.put("topic", topic);
             json.put("arg1", String.valueOf(offset));
             json.put("arg2", String.valueOf(limit));
+            if (query != null) {
+                json.put("arg3", query);
+            } else {
+                json.put("arg3", "");
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
