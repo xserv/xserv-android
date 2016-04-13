@@ -58,12 +58,13 @@ public class Xserv extends XservBase {
     public final static int RC_DB_ERROR = -8;
 
     private final static String TAG = "Xserv";
+    private final static String VERSION = "1";
     // private final static String HOST = "192.168.130.187";
     private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
-    private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/user";
+    private final static String DEFAULT_AUTH_URL = "http%1$s://%2$s:%3$s/1/user";
     private final static int DEFAULT_RI = 5000;
     // callbacks
     private static HashMap<String, OnCompletionListener> mCallbacks;
@@ -132,7 +133,7 @@ public class Xserv extends XservBase {
 
             AsyncHttpClient as = AsyncHttpClient.getDefaultInstance();
             mConn = as.websocket(String.format(
-                    URL, protocol, HOST, port, mAppId, BuildConfig.VERSION_NAME), null,
+                    URL, protocol, HOST, port, mAppId, VERSION), null,
                     new AsyncHttpClient.WebSocketConnectCallback() {
 
                         @Override
@@ -358,25 +359,33 @@ public class Xserv extends XservBase {
                 // add url encode params
                 String url_encode = "";
                 String user = "";
+                String pass = "";
                 try {
                     JSONObject params = auth.getJSONObject("params");
                     Iterator<?> keys = params.keys();
                     while (keys.hasNext()) {
-                        if (url_encode.length() == 0) {
-                            url_encode += "?";
-                        } else {
-                            url_encode += "&";
-                        }
-
                         String name = (String) keys.next();
                         String value = (String) params.get(name);
-                        if (name.equals("user")) {
-                            user = value;
-                        }
-                        try {
-                            url_encode += name + "=" + URLEncoder.encode(value, "UTF-8");
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
+
+                        switch (name) {
+                            case "user":
+                                user = value;
+                                break;
+                            case "pass":
+                                pass = value;
+                                break;
+                            default:
+                                try {
+                                    if (url_encode.length() == 0) {
+                                        url_encode += "?";
+                                    } else {
+                                        url_encode += "&";
+                                    }
+                                    url_encode += name + "=" + URLEncoder.encode(value, "UTF-8");
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
                         }
                     }
 
@@ -399,9 +408,9 @@ public class Xserv extends XservBase {
                     endpoint = auth.getString("endpoint");
                 } catch (JSONException ignored) {
                 }
-
                 endpoint += url_encode;
 
+                // Log.d(TAG, endpoint);
                 AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "GET");
 
                 // add custom headers
@@ -415,6 +424,12 @@ public class Xserv extends XservBase {
                 } catch (JSONException ignored) {
                 }
                 request.setHeader("X-Xserv-AppId", mAppId);
+
+                if (user.length() > 0 && pass.length() > 0) {
+                    byte[] user_pass = (user + ":" + pass).getBytes();
+                    request.setHeader("Authorization", "basic " +
+                            Base64.encodeToString(user_pass, Base64.NO_WRAP));
+                }
 
                 final String userStatic = user;
 

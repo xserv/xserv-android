@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     private final static String TAG = "Example";
     private final static String APP_ID = "9Pf80-3";
     private final static String TOPIC = "milano";
-    // private final static String TOPIC_PRIVATE = "@milano";
+    private final static String TOPIC_PRIVATE = "@milano";
     private Xserv mXserv;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
                         if (message.length() > 0) {
                             mXserv.publish(TOPIC, data);
-                            //mXserv.publish(TOPIC_PRIVATE, data);
+                            mXserv.publish(TOPIC_PRIVATE, data);
 
                             editText.setText("");
                         }
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         Log.d(TAG, "Connected");
         Log.d(TAG, "user data " + mXserv.getUserData());
 
-        /*JSONObject auth = new JSONObject();
+        JSONObject auth = new JSONObject();
         try {
             // JSONObject headers = new JSONObject();
             // auth.put("headers", headers);
@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             auth.put("params", params);
         } catch (JSONException ignored) {
         }
-        mXserv.subscribe(TOPIC_PRIVATE, auth);*/
+        mXserv.subscribe(TOPIC_PRIVATE, auth);
 
         mXserv.subscribe(TOPIC);
     }
