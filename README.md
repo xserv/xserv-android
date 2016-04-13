@@ -5,7 +5,7 @@
 <br>
 
 This library is client that allows Android clients to connect to the [Xserv](http://mobile-italia.com/xserv/) WebSocket API.<br>
-[Xserv](http://mobile-italia.com/xserv/) is a platform of real-time bi-directional messaging via WebSockets to web and mobile apps, or any other Internet connected device.
+[Xserv](http://mobile-italia.com/xserv/) iprovides a complete solution to implement the backend of all your applications such as web, mobile, desktop, embedded or otherwise.
 
 ## How To Get Started
 
