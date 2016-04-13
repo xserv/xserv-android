@@ -189,15 +189,12 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             Log.d(TAG, "operation: " + json.toString());
 
             JSONObject params = new JSONObject();
-            try {
+            /*try {
                 params.put("offset", 0);
                 params.put("limit", 1000);
-
-                //JSONObject query = new JSONObject();
-                //query.put("data.n", 2);
-                //params.put("query", query);
+                params.put("query", new JSONObject("{\"data.age\": {\"$gte\": 36}}"));
             } catch (JSONException ignored) {
-            }
+            }*/
 
             mXserv.history(TOPIC, params);
         }
