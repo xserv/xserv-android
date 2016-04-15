@@ -132,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             // auth.put("headers", headers);
 
             JSONObject params = new JSONObject();
+            params.put("test", 1);
             params.put("user", "amatig");
             params.put("pass", "amatig");
             auth.put("params", params);

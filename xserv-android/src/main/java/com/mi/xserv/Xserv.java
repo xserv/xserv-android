@@ -26,7 +26,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
@@ -356,61 +355,43 @@ public class Xserv extends XservBase {
                     port = TLS_PORT;
                 }
 
-                // add url encode params
-                String url_encode = "";
-                String user = "";
-                String pass = "";
-                try {
-                    JSONObject params = auth.getJSONObject("params");
-                    Iterator<?> keys = params.keys();
-                    while (keys.hasNext()) {
-                        String name = (String) keys.next();
-                        String value = (String) params.get(name);
-
-                        switch (name) {
-                            case "user":
-                                user = value;
-                                break;
-                            case "pass":
-                                pass = value;
-                                break;
-                            default:
-                                try {
-                                    if (url_encode.length() == 0) {
-                                        url_encode += "?";
-                                    } else {
-                                        url_encode += "&";
-                                    }
-                                    url_encode += name + "=" + URLEncoder.encode(value, "UTF-8");
-                                } catch (UnsupportedEncodingException e) {
-                                    e.printStackTrace();
-                                }
-                                break;
-                        }
-                    }
-
-                    try {
-                        if (url_encode.length() == 0) {
-                            url_encode += "?";
-                        } else {
-                            url_encode += "&";
-                        }
-                        url_encode += "socket_id=" + URLEncoder.encode(getSocketId(), "UTF-8") +
-                                "&topic=" + URLEncoder.encode(topic, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                } catch (JSONException ignored) {
-                }
-
                 String endpoint = String.format(DEFAULT_AUTH_URL, protocol, HOST, port);
                 try {
                     endpoint = auth.getString("endpoint");
                 } catch (JSONException ignored) {
                 }
-                endpoint += url_encode;
 
-                // Log.d(TAG, endpoint);
+                String user = "";
+                String pass = "";
+
+                JSONObject params = null;
+                try {
+                    params = auth.getJSONObject("params");
+                } catch (JSONException ignored) {
+                }
+
+                // params
+                if (params != null) {
+                    try {
+                        user = params.getString("user");
+                        params.remove("user");
+                    } catch (JSONException ignored) {
+                    }
+                    try {
+                        pass = params.getString("pass");
+                        params.remove("pass");
+                    } catch (JSONException ignored) {
+                    }
+
+                    try {
+                        params.put("socket_id", getSocketId());
+                        params.put("topic", topic);
+                    } catch (JSONException ignored) {
+                    }
+
+                    endpoint += "?" + urlEncodedJSON(params);
+                }
+
                 AsyncHttpRequest request = new AsyncHttpRequest(Uri.parse(endpoint), "GET");
 
                 // add custom headers

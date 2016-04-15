@@ -15,11 +15,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.net.URLEncoder;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -43,6 +47,30 @@ public class XservBase {
 
     protected Handler getMainLooper() {
         return mHandler;
+    }
+
+    protected String urlEncodedJSON(JSONObject params) {
+        String url_encode = "";
+        if (params != null) {
+            Iterator<?> keys = params.keys();
+            while (keys.hasNext()) {
+                String key = (String) keys.next();
+                String value = "";
+                try {
+                    value = params.get(key).toString();
+                } catch (JSONException ignored) {
+                }
+                try {
+                    if (url_encode.length() > 0) {
+                        url_encode += "&";
+                    }
+                    url_encode += URLEncoder.encode(key, "UTF-8") + "=" +
+                            URLEncoder.encode(value, "UTF-8");
+                } catch (UnsupportedEncodingException ignored) {
+                }
+            }
+        }
+        return url_encode;
     }
 
     protected String getDeviceID() {
