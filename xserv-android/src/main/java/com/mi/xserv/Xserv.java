@@ -42,6 +42,9 @@ public class Xserv extends XservBase {
     public final static int OP_USERS = 204;
     public final static int OP_TOPICS = 205;
     public final static int OP_UPDATE = 300;
+    public final static int OP_UPDATE_ALL = 301;
+    public final static int OP_DELETE = 302;
+    public final static int OP_DELETE_ALL = 303;
     public final static int OP_JOIN = 401;
     public final static int OP_LEAVE = 402;
     // op result_code
@@ -492,6 +495,12 @@ public class Xserv extends XservBase {
                 return "topics";
             case OP_UPDATE:
                 return "update";
+            case OP_UPDATE_ALL:
+                return "update_all";
+            case OP_DELETE:
+                return "delete";
+            case OP_DELETE_ALL:
+                return "delete_all";
         }
         return "";
     }
@@ -537,6 +546,30 @@ public class Xserv extends XservBase {
             json.put("op", OP_UPDATE);
             json.put("topic", topic);
             json.put("arg1", data);
+            json.put("arg2", object_id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        send(json);
+        return uuid;
+    }
+
+    public String delete(String topic, String object_id) {
+        return delete(topic, object_id, null);
+    }
+
+    public String delete(String topic, String object_id, OnCompletionListener listener) {
+        if (!isConnected()) return "";
+
+        String uuid = UUID.randomUUID().toString();
+        if (listener != null) {
+            mCallbacks.put(uuid, listener);
+        }
+        JSONObject json = new JSONObject();
+        try {
+            json.put("uuid", uuid);
+            json.put("op", OP_DELETE);
+            json.put("topic", topic);
             json.put("arg2", object_id);
         } catch (JSONException e) {
             e.printStackTrace();

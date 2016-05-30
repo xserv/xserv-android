@@ -28,14 +28,9 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
 public class XservBase {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private WeakReference<Xserv.OnXservEventListener> mDelegate;
-    private TrustManagerFactory mTmf;
-    private SSLContext mSSLContext;
 
     public XservBase() {
         mDelegate = new WeakReference<>(null);
