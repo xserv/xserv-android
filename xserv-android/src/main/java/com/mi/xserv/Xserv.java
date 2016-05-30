@@ -364,25 +364,18 @@ public class Xserv extends XservBase {
                 } catch (JSONException ignored) {
                 }
 
-                String user = "";
-                String pass = "";
-
                 JSONObject params = null;
                 try {
                     params = auth.getJSONObject("params");
                 } catch (JSONException ignored) {
                 }
 
+                String user = "";
+
                 // params
                 if (params != null) {
                     try {
                         user = params.getString("user");
-                        params.remove("user");
-                    } catch (JSONException ignored) {
-                    }
-                    try {
-                        pass = params.getString("pass");
-                        params.remove("pass");
                     } catch (JSONException ignored) {
                     }
 
@@ -408,12 +401,6 @@ public class Xserv extends XservBase {
                 } catch (JSONException ignored) {
                 }
                 request.setHeader("X-Xserv-AppId", mAppId);
-
-                if (user.length() > 0 && pass.length() > 0) {
-                    byte[] user_pass = (user + ":" + pass).getBytes();
-                    request.setHeader("Authorization", "basic " +
-                            Base64.encodeToString(user_pass, Base64.NO_WRAP));
-                }
 
                 final String userStatic = user;
 
