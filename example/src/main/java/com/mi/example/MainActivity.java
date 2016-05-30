@@ -23,7 +23,7 @@ import org.json.JSONTokener;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements Xserv.OnXservEventListener {
-    private final static String TAG = "Example";
+    private final static String TAG = "MainActivity";
     private final static String APP_ID = "9Pf80-3";
     private final static String TOPIC = "milano";
     private final static String TOPIC_PRIVATE = "@milano";
@@ -33,14 +33,14 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     private MyAdapter mAdapter;
     private ArrayList<JSONObject> mDataSource;
 
-    @Override
+    /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
-    }
+    }*/
 
-    @Override
+    /*@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         }
 
         return super.onOptionsItemSelected(item);
-    }
+    }*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

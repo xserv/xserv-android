@@ -2,8 +2,10 @@
 <resources>
     <color name="colorPrimary">#333</color>
     <color name="colorPrimaryDark">#222</color>
-    <color name="colorAccent">#4CAF50</color>
+    <color name="colorAccent">#00B8D4</color>
     <color name="border">#ccc</color>
+    <color name="title">#333</color>
+    <color name="subtitle">#999</color>
     <color name="row">#FFF</color>
     <color name="window">#eee</color>
 </resources>

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.mi.example.MainActivity">
+    tools:context="com.mi.example.RoomActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -21,34 +21,12 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/my_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
-        android:layout_marginBottom="58dp"
-        android:background="@color/window"
-        android:clipToPadding="false"
-        android:paddingBottom="8dip"
-        android:paddingLeft="8dip"
-        android:paddingRight="8dip"
-        android:paddingTop="8dip"
-        android:scrollbarStyle="outsideOverlay"
-        android:scrollbars="vertical" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dip"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="58dp"
-        android:background="@color/border" />
-
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
         android:layout_height="58dp"
         android:gravity="center_vertical"
-        android:layout_gravity="bottom"
+        android:layout_gravity="center"
         android:layout_marginLeft="13dip"
         android:layout_marginRight="13dip"
         android:hint="Message"
