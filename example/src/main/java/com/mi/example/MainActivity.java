@@ -1,14 +1,13 @@
 package com.mi.example;
 
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -21,39 +20,25 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements Xserv.OnXservEventListener {
     private final static String TAG = "MainActivity";
     private final static String APP_ID = "9Pf80-3";
-    private final static String TOPIC = "milano";
-    private final static String TOPIC_PRIVATE = "@milano";
     private Xserv mXserv;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
     private MyAdapter mAdapter;
     private ArrayList<JSONObject> mDataSource;
+    private String mRoomName;
+    private HashMap<String, JSONObject> mUsers;
 
-    /*@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }*/
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
 
-    /*@Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }*/
+        savedInstanceState.putString("roomName", mRoomName);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         mDataSource = new ArrayList<>();
+        mUsers = new HashMap<>();
 
         // specify an adapter (see also next example)
         mAdapter = new MyAdapter(mDataSource);
@@ -101,8 +87,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
                         }
 
                         if (message.length() > 0) {
-                            mXserv.publish(TOPIC, data);
-                            mXserv.publish(TOPIC_PRIVATE, data);
+                            mXserv.publish(mRoomName, data);
 
                             editText.setText("");
                         }
@@ -111,6 +96,15 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
                     return handled;
                 }
             });
+        }
+
+        if (savedInstanceState != null) {
+            mRoomName = savedInstanceState.getString("roomName");
+        } else {
+            Bundle b = getIntent().getExtras();
+            if (b != null) {
+                mRoomName = b.getString("roomName");
+            }
         }
 
         mXserv = new Xserv(APP_ID);
@@ -124,23 +118,8 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     @Override
     public void OnOpenConnection() {
         Log.d(TAG, "Connected");
-        Log.d(TAG, "user data " + mXserv.getUserData());
 
-        JSONObject auth = new JSONObject();
-        try {
-            // JSONObject headers = new JSONObject();
-            // auth.put("headers", headers);
-
-            JSONObject params = new JSONObject();
-            params.put("test", 1);
-            params.put("user", "amatig");
-            params.put("pass", "amatig");
-            auth.put("params", params);
-        } catch (JSONException ignored) {
-        }
-        mXserv.subscribe(TOPIC_PRIVATE, auth);
-
-        mXserv.subscribe(TOPIC);
+        mXserv.subscribe(mRoomName);
     }
 
     @Override
@@ -155,10 +134,48 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
     @Override
     public void OnReceiveMessages(final JSONObject json) {
+        String socket_id = null;
         try {
-            Log.d(TAG, "message data: " + json.get("data") + " " + json.get("data").getClass().getCanonicalName());
+            socket_id = json.getString("socket_id");
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+
+        if (socket_id != null && socket_id.length() > 0) {
+            JSONObject userData = mUsers.get(socket_id);
+            String os = "";
+            int os_res = -1;
+
+            if (userData != null) {
+                try {
+                    JSONObject stat = userData.getJSONObject("stat");
+                    os = stat.getString("os");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (os.startsWith("And")) {
+                os_res = R.drawable.and_icon;
+            } else if (os.startsWith("iOS")) {
+                os_res = R.drawable.ios_icon;
+            } else if (os.startsWith("Browser")) {
+                os_res = R.drawable.js_icon;
+            } else if (os.startsWith("API")) {
+                os_res = R.drawable.api_icon;
+            }
+
+            try {
+                json.put("os_res", os_res);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                json.put("os_res", R.drawable.api_icon);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
         mDataSource.add(0, json);
@@ -170,35 +187,41 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         int op = 0;
         try {
             op = json.getInt("op");
-        } catch (JSONException ignored) {
-            // e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         if (op == Xserv.OP_SUBSCRIBE) {
-            Log.d(TAG, "subscribe: " + json.toString());
-        } else if (op == Xserv.OP_HISTORY) {
+            mXserv.users(mRoomName); // TODO anche chiamare periodicamente??
+        } else if (op == Xserv.OP_USERS) {
+            mUsers.clear(); // TODO usare dei lock
+
+            JSONArray users = null;
             try {
-                JSONArray list = json.getJSONArray("data");
-                for (int i = 0; i < list.length(); i++) {
-                    JSONObject item = list.getJSONObject(i);
-                    Log.d(TAG, "history data: " + item.get("data") + " " + item.get("data").getClass().getCanonicalName());
-                }
+                users = json.getJSONArray("data");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        } else if (op == Xserv.OP_PUBLISH) {
-            Log.d(TAG, "operation: " + json.toString());
 
-            JSONObject params = new JSONObject();
-            /*try {
-                params.put("offset", 0);
-                params.put("limit", 1000);
-                params.put("query", new JSONObject("{\"data.age\": {\"$gte\": 36}}"));
-            } catch (JSONException ignored) {
-            }*/
+            if (users != null) {
+                for (int i = 0; i < users.length(); i++) {
+                    try {
+                        JSONObject u = users.getJSONObject(i);
+                        String socket_id = u.getString("socket_id");
 
-            mXserv.history(TOPIC, params);
+                        mUsers.put(socket_id, u);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+
+        mXserv.disconnect();
+    }
 }

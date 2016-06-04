@@ -9,12 +9,20 @@
         android:layout_height="match_parent"
         android:background="@drawable/row">
 
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="left|center"
+            android:layout_marginLeft="8dp"
+            android:gravity="center" />
+
         <TextView
             android:id="@+id/text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="left|center"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="52dp"
             android:layout_marginRight="72dp"
             android:gravity="left|center"
             android:singleLine="false"
@@ -25,9 +33,9 @@
             android:id="@+id/timestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="right|center"
+            android:layout_gravity="right|top"
             android:layout_marginRight="8dp"
-            android:gravity="right|bottom"
+            android:layout_marginTop="8dp"
             android:textColor="@color/subtitle"
             android:textSize="9sp" />
 

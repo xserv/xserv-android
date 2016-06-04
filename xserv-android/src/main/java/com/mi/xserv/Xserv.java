@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
     // op
-    public final static int OP_HANDSHAKE = 100;
+    private final static int OP_HANDSHAKE = 100;
     public final static int OP_PUBLISH = 200;
     public final static int OP_SUBSCRIBE = 201;
     public final static int OP_UNSUBSCRIBE = 202;

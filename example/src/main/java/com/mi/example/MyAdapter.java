@@ -4,6 +4,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.json.JSONException;
@@ -34,6 +35,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         JSONObject item = mDataset.get(position);
+
         String message = "";
         Integer timestamp = 0;
         try {
@@ -41,6 +43,19 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             timestamp = item.getInt("timestamp");
         } catch (JSONException ignored) {
             // e.printStackTrace();
+        }
+
+        int os_res = -1;
+        try {
+            os_res = item.getInt("os_res");
+        } catch (JSONException ignored) {
+            // e.printStackTrace();
+        }
+
+        if (os_res != -1) {
+            holder.icon.setImageResource(os_res);
+        } else {
+            holder.icon.setImageResource(R.drawable.oth_icon);
         }
 
         holder.text.setText(message);
@@ -58,12 +73,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     // you provide access to all the views for a data item in a view holder
     public static class ViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
+        public ImageView icon;
         public TextView text;
         public TextView timestamp;
 
         public ViewHolder(View itemView) {
             super(itemView);
 
+            icon = (ImageView) itemView.findViewById(R.id.icon);
             text = (TextView) itemView.findViewById(R.id.text);
             timestamp = (TextView) itemView.findViewById(R.id.timestamp);
         }

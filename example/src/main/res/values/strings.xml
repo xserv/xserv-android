@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Chat Demo</string>
     <string name="action_settings">Settings</string>
+    <string name="room">Room</string>
+    <string name="join">Join</string>
+    <string name="hint_message">Enter message...</string>
 </resources>
