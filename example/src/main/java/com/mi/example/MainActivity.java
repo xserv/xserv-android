@@ -145,6 +145,17 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
     @Override
     public void OnReceiveMessages(final JSONObject json) {
+        addMessage(json);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    private void addMessage(JSONObject json) {
         JSONObject stat = null;
         try {
             JSONObject user = json.getJSONObject("user");
@@ -186,7 +197,6 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         }
 
         mDataSource.add(0, json);
-        mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -196,6 +206,37 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             op = json.getInt("op");
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+
+        if (op == Xserv.OP_SUBSCRIBE) {
+            JSONObject params = new JSONObject();
+            try {
+                params.put("limit", -100);
+            } catch (JSONException ignored) {
+            }
+
+            mXserv.history(mRoomName, params, new Xserv.OnCompletionListener() {
+
+                @Override
+                public void onCompletion(JSONObject json) {
+                    try {
+                        JSONArray messages = json.getJSONArray("data");
+                        for (int i = 0; i < messages.length(); i++) {
+                            JSONObject jsonMsg = messages.getJSONObject(i);
+                            addMessage(jsonMsg);
+                        }
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.notifyDataSetChanged();
+                            }
+                        });
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
     }
 
