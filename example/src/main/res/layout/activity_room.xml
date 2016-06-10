@@ -59,4 +59,15 @@
             android:text="@string/join" />
     </LinearLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="100dp"
+        android:layout_marginLeft="32dip"
+        android:layout_marginRight="32dip"
+        android:text="@string/message"
+        android:textAlignment="center"
+        android:textSize="14sp" />
+
 </android.support.design.widget.CoordinatorLayout>

@@ -18,6 +18,8 @@ public class RoomActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        setTitle(getString(R.string.app_name_full));
+
         mRoomName = (EditText) findViewById(R.id.roomName);
     }
 

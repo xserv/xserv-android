@@ -1,13 +1,14 @@
 package com.mi.example;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MenuItem;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     private ArrayList<JSONObject> mDataSource;
     private String mRoomName;
     private HashMap<String, JSONObject> mUsers;
+    private EditText mEditText;
 
     @Override
     protected void onSaveInstanceState(Bundle savedInstanceState) {
@@ -46,6 +48,11 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        setTitle(getString(R.string.app_name_full));
 
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
 
@@ -66,31 +73,14 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         mAdapter = new MyAdapter(mDataSource);
         mRecyclerView.setAdapter(mAdapter);
 
-        final EditText editText = (EditText) findViewById(R.id.editText);
-        if (editText != null) {
-            editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        mEditText = (EditText) findViewById(R.id.editText);
+        if (mEditText != null) {
+            mEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
                 @Override
                 public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                     boolean handled = false;
                     if (actionId == EditorInfo.IME_ACTION_SEND) {
-                        String message = editText.getText().toString();
-
-                        Object data = message;
-                        try {
-                            Object type = new JSONTokener(message).nextValue();
-                            if (type instanceof JSONObject) {
-                                data = new JSONObject(message);
-                            } else if (type instanceof JSONArray) {
-                                data = new JSONArray(message);
-                            }
-                        } catch (JSONException ignored) {
-                        }
-
-                        if (message.length() > 0) {
-                            mXserv.publish(mRoomName, data);
-
-                            editText.setText("");
-                        }
+                        sendMessage(null);
                         handled = true;
                     }
                     return handled;
@@ -115,6 +105,27 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         mXserv.connect();
     }
 
+    public void sendMessage(View view) {
+        String message = mEditText.getText().toString();
+
+        Object data = message;
+        try {
+            Object type = new JSONTokener(message).nextValue();
+            if (type instanceof JSONObject) {
+                data = new JSONObject(message);
+            } else if (type instanceof JSONArray) {
+                data = new JSONArray(message);
+            }
+        } catch (JSONException ignored) {
+        }
+
+        if (message.length() > 0) {
+            mXserv.publish(mRoomName, data);
+
+            mEditText.setText("");
+        }
+    }
+
     @Override
     public void OnOpenConnection() {
         Log.d(TAG, "Connected");
@@ -134,27 +145,23 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
     @Override
     public void OnReceiveMessages(final JSONObject json) {
-        String socket_id = null;
+        JSONObject stat = null;
         try {
-            socket_id = json.getString("socket_id");
+            JSONObject user = json.getJSONObject("user");
+            stat = user.getJSONObject("stat");
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        if (socket_id != null && socket_id.length() > 0) {
-            JSONObject userData = mUsers.get(socket_id);
+        if (stat != null) {
             String os = "";
-            int os_res = -1;
-
-            if (userData != null) {
-                try {
-                    JSONObject stat = userData.getJSONObject("stat");
-                    os = stat.getString("os");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            try {
+                os = stat.getString("os");
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
 
+            int os_res = -1;
             if (os.startsWith("And")) {
                 os_res = R.drawable.and_icon;
             } else if (os.startsWith("iOS")) {
@@ -172,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             }
         } else {
             try {
-                json.put("os_res", R.drawable.api_icon);
+                json.put("os_res", R.drawable.oth_icon);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -190,32 +197,6 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-        if (op == Xserv.OP_SUBSCRIBE) {
-            mXserv.users(mRoomName); // TODO anche chiamare periodicamente??
-        } else if (op == Xserv.OP_USERS) {
-            mUsers.clear(); // TODO usare dei lock
-
-            JSONArray users = null;
-            try {
-                users = json.getJSONArray("data");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            if (users != null) {
-                for (int i = 0; i < users.length(); i++) {
-                    try {
-                        JSONObject u = users.getJSONObject(i);
-                        String socket_id = u.getString("socket_id");
-
-                        mUsers.put(socket_id, u);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -224,4 +205,13 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
         mXserv.disconnect();
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        if (menuItem.getItemId() == android.R.id.home) {
+            finish();
+        }
+        return super.onOptionsItemSelected(menuItem);
+    }
+
 }

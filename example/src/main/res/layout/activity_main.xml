@@ -27,7 +27,6 @@
         android:layout_height="match_parent"
         android:layout_marginBottom="58dp"
         android:layout_marginTop="?attr/actionBarSize"
-        android:background="@color/window"
         android:clipToPadding="false"
         android:paddingBottom="8dip"
         android:paddingLeft="8dip"
@@ -36,24 +35,38 @@
         android:scrollbarStyle="outsideOverlay"
         android:scrollbars="vertical" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dip"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="58dp"
-        android:background="@color/border" />
-
-    <EditText
-        android:id="@+id/editText"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="58dp"
         android:layout_gravity="bottom"
-        android:layout_marginLeft="16dip"
-        android:layout_marginRight="16dip"
-        android:gravity="center_vertical"
-        android:hint="@string/hint_message"
-        android:imeOptions="actionSend"
-        android:inputType="text"
-        android:textSize="16sp" />
+
+        android:background="@android:color/white"
+        android:gravity="center_vertical">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dip"
+            android:layout_gravity="top"
+            android:background="@color/border" />
+
+        <EditText
+            android:id="@+id/editText"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginLeft="9dip"
+            android:layout_marginRight="79dip"
+            android:hint="@string/hint_message"
+            android:imeOptions="actionSend"
+            android:inputType="text"
+            android:textSize="16sp" />
+
+        <Button
+            android:layout_width="64dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|right"
+            android:layout_marginRight="9dip"
+            android:onClick="sendMessage"
+            android:text="@string/send" />
+    </FrameLayout>
 
 </android.support.design.widget.CoordinatorLayout>

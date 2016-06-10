@@ -1,6 +1,8 @@
 package com.mi.example;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     private ArrayList<JSONObject> mDataset;
@@ -59,7 +63,33 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         }
 
         holder.text.setText(message);
-        holder.timestamp.setText(String.valueOf(timestamp));
+
+        long milliseconds = new Date((long) timestamp * 1000).getTime();
+        String date_string = getFormattedDate(holder.timestamp.getContext(), milliseconds);
+
+        holder.timestamp.setText(date_string);
+    }
+
+    private String getFormattedDate(Context ctx, long timeInMilis) {
+        Calendar time = Calendar.getInstance();
+        time.setTimeInMillis(timeInMilis);
+
+        Calendar now = Calendar.getInstance();
+
+        final String timeFormatString = ctx.getString(R.string.timeFormatString);
+        final String dateTimeFormatString = ctx.getString(R.string.dateTimeFormatString);
+        final String dateYearsFormatString = ctx.getString(R.string.dateYearsFormatString);
+        final String yesterday = ctx.getString(R.string.yesterday);
+
+        if (now.get(Calendar.DATE) == time.get(Calendar.DATE)) {
+            return DateFormat.format(timeFormatString, time).toString();
+        } else if (now.get(Calendar.DATE) - time.get(Calendar.DATE) == 1) {
+            return yesterday + " " + DateFormat.format(timeFormatString, time);
+        } else if (now.get(Calendar.YEAR) == time.get(Calendar.YEAR)) {
+            return DateFormat.format(dateTimeFormatString, time).toString();
+        } else {
+            return DateFormat.format(dateYearsFormatString, time).toString();
+        }
     }
 
     // Return the size of your dataset (invoked by the layout manager)
