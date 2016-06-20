@@ -6,12 +6,12 @@ group = "com.mi.xserv"
 version = "1.2.2"
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 24
     buildToolsVersion "23.0.2"
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 23
+        targetSdkVersion 24
         versionCode 24
         versionName version
     }
