@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
         }
 
         mXserv = new Xserv(APP_ID);
-        // mXserv.disableTLS();
+        mXserv.disableTLS();
 
         mXserv.setOnEventListener(this);
 
@@ -124,8 +124,10 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
                         .getString(RegistrationIntentService.GCM_TOKEN, "");
 
                 if (gcmToken.length() > 0) {
-                    mXserv.connect();
+                    mXserv.setDeviceToken(gcmToken);
                 }
+
+                mXserv.connect();
             }
         };
 

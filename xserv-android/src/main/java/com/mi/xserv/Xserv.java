@@ -1,8 +1,8 @@
 /***
  * Xserv
- * <p/>
+ * <p>
  * Copyright (C) 2015 Giovanni Amati
- * <p/>
+ * <p>
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  * You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
@@ -33,8 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class Xserv extends XservBase {
-    // op
-    private final static int OP_HANDSHAKE = 100;
     public final static int OP_PUBLISH = 200;
     public final static int OP_SUBSCRIBE = 201;
     public final static int OP_UNSUBSCRIBE = 202;
@@ -58,11 +56,12 @@ public class Xserv extends XservBase {
     public final static int RC_NOT_PRIVATE = -6;
     public final static int RC_LIMIT_MESSAGES = -7;
     public final static int RC_DB_ERROR = -8;
-
+    // op
+    private final static int OP_HANDSHAKE = 100;
     private final static String TAG = "Xserv";
     private final static String VERSION = "1";
-    // private final static String HOST = "192.168.130.187";
-    private final static String HOST = "mobile-italia.com";
+    private final static String HOST = "192.168.130.187";
+    // private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
@@ -78,6 +77,7 @@ public class Xserv extends XservBase {
     private JSONObject mUserData;
     private boolean isConnected;
     private boolean isSecure;
+    private String mDeviceToken;
 
     /**
      * Return an instance of Xserv connector.
@@ -312,6 +312,17 @@ public class Xserv extends XservBase {
         mReconnectInterval = milliseconds;
     }
 
+    public String getDeviceToken() {
+        if (mDeviceToken == null) {
+            mDeviceToken = "";
+        }
+        return mDeviceToken;
+    }
+
+    public void setDeviceToken(String device_token) {
+        mDeviceToken = device_token;
+    }
+
     private void handshake() {
         JSONObject stat = new JSONObject();
         try {
@@ -321,6 +332,7 @@ public class Xserv extends XservBase {
             }
 
             stat.put("uuid", getDeviceID());
+            stat.put("device_token", getDeviceToken());
             stat.put("model", model);
             stat.put("os", "Android " + Build.VERSION.RELEASE);
             stat.put("tz_offset", getTimeZoneOffset());
