@@ -1,4 +1,4 @@
-package com.mi.example;
+package com.mx.example1;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;

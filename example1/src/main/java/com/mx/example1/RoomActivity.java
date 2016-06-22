@@ -1,4 +1,4 @@
-package com.mi.example;
+package com.mx.example1;
 
 import android.content.Intent;
 import android.os.Bundle;

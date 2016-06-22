@@ -2,8 +2,6 @@
     <string name="app_name">Xserv - Chat</string>
     <string name="app_name_full">Xserv BaaS - Chat Demo</string>
 
-    <string name="action_settings">Settings</string>
-
     <string name="room">Room</string>
     <string name="join">Join</string>
     <string name="message">Go to website\n\'https://mobile-italia.com/xserv/demo\'\nto use web client chat demo.</string>
@@ -14,4 +12,6 @@
     <string name="dateTimeFormatString">EEE, MMM d, h:mm a</string>
     <string name="dateYearsFormatString">MMM d yyyy, h:mm a</string>
     <string name="yesterday">yesterday</string>
+
+    <string name="gcm_defaultSenderId">398744716507</string>
 </resources>

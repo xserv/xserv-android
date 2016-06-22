@@ -1,6 +1,13 @@
-package com.mi.example;
+package com.mx.example1;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,6 +21,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.mi.xserv.Xserv;
+import com.mx.example1.gcm.RegistrationIntentService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,6 +42,8 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
     private String mRoomName;
     private HashMap<String, JSONObject> mUsers;
     private EditText mEditText;
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
+    private boolean isReceiverRegistered;
 
     @Override
     protected void onSaveInstanceState(Bundle savedInstanceState) {
@@ -102,7 +112,26 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
 
         mXserv.setOnEventListener(this);
 
-        mXserv.connect();
+        // Registering BroadcastReceiver e GCM Token
+
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                SharedPreferences sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(context);
+
+                String gcmToken = sharedPreferences
+                        .getString(RegistrationIntentService.GCM_TOKEN, "");
+
+                if (gcmToken.length() > 0) {
+                    mXserv.connect();
+                }
+            }
+        };
+
+        registerReceiver();
+
+        requestToken();
     }
 
     public void sendMessage(View view) {
@@ -232,8 +261,8 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
                                 mAdapter.notifyDataSetChanged();
                             }
                         });
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (JSONException ignored) {
+
                     }
                 }
             });
@@ -253,6 +282,34 @@ public class MainActivity extends AppCompatActivity implements Xserv.OnXservEven
             finish();
         }
         return super.onOptionsItemSelected(menuItem);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver();
+    }
+
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+        isReceiverRegistered = false;
+        super.onPause();
+    }
+
+    private void registerReceiver() {
+        if (!isReceiverRegistered) {
+            LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                    new IntentFilter(RegistrationIntentService.REGISTRATION_COMPLETE));
+            isReceiverRegistered = true;
+        }
+    }
+
+    private void requestToken() {
+        Log.d(TAG, "GCM Request Token");
+
+        Intent intent = new Intent(this, RegistrationIntentService.class);
+        startService(intent);
     }
 
 }
