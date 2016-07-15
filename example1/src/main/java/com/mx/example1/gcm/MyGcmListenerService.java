@@ -37,18 +37,20 @@ public class MyGcmListenerService extends GcmListenerService {
      * Called when message is received.
      *
      * @param from SenderID of the sender.
-     * @param data Data bundle containing message data as key/value pairs.
+     * @param bundle Data bundle containing message data as key/value pairs.
      *             For Set of keys use data.keySet().
      */
     @Override
-    public void onMessageReceived(String from, Bundle data) {
-        String message = data.getString("message");
-        Log.d(TAG, "From: " + from);
-        Log.d(TAG, "Message: " + message);
+    public void onMessageReceived(String from, Bundle bundle) {
+        String app_id = bundle.getString("app_id");
+        String timestamp = bundle.getString("timestamp");
+        String data = bundle.getString("data");
 
-        if (message != null && message.length() > 0) {
-            sendNotification(message);
-        }
+        Log.d(TAG, "app_id: " + app_id);
+        Log.d(TAG, "timestamp: " + timestamp);
+        Log.d(TAG, "data: " + data);
+
+        sendNotification(data);
     }
 
     private void sendNotification(String message) {

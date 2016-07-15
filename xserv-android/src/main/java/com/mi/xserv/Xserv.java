@@ -60,8 +60,8 @@ public class Xserv extends XservBase {
     private final static int OP_HANDSHAKE = 100;
     private final static String TAG = "Xserv";
     private final static String VERSION = "1";
-    private final static String HOST = "192.168.130.187";
-    // private final static String HOST = "mobile-italia.com";
+    // private final static String HOST = "192.168.130.187";
+    private final static String HOST = "mobile-italia.com";
     private final static String PORT = "4332";
     private final static String TLS_PORT = "8332";
     private final static String URL = "ws%1$s://%2$s:%3$s/ws/%4$s?version=%5$s";
