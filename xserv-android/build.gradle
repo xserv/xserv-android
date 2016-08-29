@@ -1,9 +1,8 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 group = "com.mi.xserv"
-version = "1.2.2"
+version = "1.2.3"
 
 android {
     compileSdkVersion 24
@@ -12,44 +11,11 @@ android {
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 24
-        versionCode 24
+        versionCode 25
         versionName version
     }
     buildTypes {
 
-    }
-}
-
-def siteUrl = 'https://github.com/xserv/xserv-android'      // Homepage URL of the library
-def gitUrl = 'https://github.com/xserv/xserv-android.git'   // Git repository URL
-
-configure(install.repositories.mavenInstaller) {
-    // This generates POM.xml with proper parameters
-    pom.project {
-        packaging 'aar'
-
-        name 'Xserv Android Client Library'
-        url siteUrl
-
-        licenses {
-            license {
-                name 'GNU LESSER GENERAL PUBLIC LICENSE 3.0'
-                url 'http://www.gnu.org/licenses/lgpl.txt'
-            }
-        }
-        developers {
-            developer {
-                id 'xserv'
-                name 'Xserv'
-                email 'amatig@gmail.com'
-            }
-        }
-        scm {
-            connection gitUrl
-            developerConnection gitUrl
-            url siteUrl
-
-        }
     }
 }
 
@@ -89,12 +55,15 @@ bintray {
         repo = 'maven'
         name = 'xserv-android'
         desc = 'Xserv Android Client Library'
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
+        websiteUrl = 'https://mobile-italia.com/xserv/'
+        vcsUrl = 'https://github.com/xserv/xserv-android.git'
         licenses = ["LGPL-3.0"]
         labels = ['aar', 'android', 'real-time', 'chat', 'messaging', 'push']
         publicDownloadNumbers = true
         publish = true
+
+        githubRepo = 'xserv/xserv-android' //Optional Github repository
+        githubReleaseNotesFile = 'README.md' //Optional Github readme file
     }
 }
 
