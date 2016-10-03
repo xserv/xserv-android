@@ -27,7 +27,7 @@ Add as a dependency to your build.gradle `build.gradle`:
 ```java
 dependencies {
     ...
-    compile 'com.mi.xserv:xserv-android:+'
+    compile(group: 'com.mi.xserv', name: 'xserv-android', version: '+', ext: 'aar', classifier: '')
 }
 ```
 
