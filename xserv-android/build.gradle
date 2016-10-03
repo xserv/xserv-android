@@ -19,6 +19,36 @@ android {
     }
 }
 
+def siteUrl = 'https://github.com/xserv/xserv-android'      // Homepage URL of the library
+def gitUrl = 'https://github.com/xserv/xserv-android.git'   // Git repository URL
+
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    pkg {
+        repo = 'maven'
+        name = 'xserv-android'
+        desc = 'Xserv Android Client Library'
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["LGPL-3.0"]
+        labels = ['aar', 'android', 'real-time', 'chat', 'messaging', 'push']
+        publicDownloadNumbers = true
+        publish = true
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.koushikdutta.async:androidasync:2.1.7'
+}
+
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
@@ -41,33 +71,4 @@ artifacts {
 
 task findConventions << {
     println project.getConvention()
-}
-
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-
-    configurations = ['archives']
-    pkg {
-        repo = 'maven'
-        name = 'xserv-android'
-        desc = 'Xserv Android Client Library'
-        websiteUrl = 'https://mobile-italia.com/xserv/'
-        vcsUrl = 'https://github.com/xserv/xserv-android.git'
-        licenses = ["LGPL-3.0"]
-        labels = ['aar', 'android', 'real-time', 'chat', 'messaging', 'push']
-        publicDownloadNumbers = true
-        publish = true
-
-        githubRepo = 'xserv/xserv-android' //Optional Github repository
-        githubReleaseNotesFile = 'README.md' //Optional Github readme file
-    }
-}
-
-dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.koushikdutta.async:androidasync:2.1.7'
 }
